@@ -1,5 +1,3 @@
--- [[ DEOBFUSCATED BY @Casual ]] --
-
 -- // [1] SERVICES //
 
 local Players          = game:GetService("Players")
