@@ -1,5 +1,3 @@
--- [[ DEOBFUSCATED BY @Casual ]] --
--- Reconstructed from execution trace (logged.txt)
 -- Script: keek Auto Duels / Float / Ragdoll TP / Steal HUD
 -- Game: Anime Defenders (or similar animal podium steal game)
 
