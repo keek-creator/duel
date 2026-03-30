@@ -1,0 +1,120 @@
+-- Keek.v1 - Merged with Meow Hub UI
+-- Features from keek.v1 [cite: 77] | UI Design from Meow Hub [cite: 262]
+
+local plr = game.Players.LocalPlayer
+local uis = game:GetService("UserInputService")
+local rs = game:GetService("RunService")
+local ts = game:GetService("TweenService")
+local ws = workspace
+local cg = game:GetService("CoreGui")
+local rep = game:GetService("ReplicatedStorage")
+
+-- Meow Hub Theme Colors [cite: 262]
+local pd = Color3.fromRGB(35, 15, 65)
+local pm = Color3.fromRGB(70, 35, 140)
+local pl = Color3.fromRGB(110, 55, 200)
+local pa = Color3.fromRGB(150, 75, 255)
+local pb = Color3.fromRGB(190, 115, 255)
+local pg = Color3.fromRGB(210, 150, 255)
+local bgc = Color3.fromRGB(12, 8, 20)
+local wh = Color3.fromRGB(255, 255, 255)
+
+-- Original Keek.v1 Settings & Values [cite: 79, 81]
+local Enabled = {
+    Life = false, Right = false, Aimbot = false, SpeedBoost = false, 
+    AutoSteal = false, JumpBoost = false, SpinBot = false, AntiRagdoll = false, 
+    Unwalk = false, Galaxy = false, Float = false, Dodge = false, 
+    ESP = true, ExtraSpeed = false, BatTP = false, HitboxExpander = false,
+    AutoTPRight = false, AutoTPL2 = false
+}
+
+local Values = {
+    BoostSpeed = 30.4, ExtraSpeedValue = 57.4, JumpPower = 28, 
+    STEAL_RADIUS = 8, STEAL_DURATION = 0.2, AimbotSpeed = 55,
+    AimbotRadius = 100, SpinSpeed = 10, FloatHeight = 8,
+    L1 = Vector3.new(-475.58, -5.40, 93.80), L2 = Vector3.new(-483.15, -4.42, 95.80),
+    R1 = Vector3.new(-475.16, -6.52, 27.70), R2 = Vector3.new(-483.04, -5.09, 25.15),
+    TpCheckA = Vector3.new(-472.60, -7.00, 57.52), TpFinalLeft = Vector3.new(-483.59, -5.04, 104.24),
+    TpFinalRight = Vector3.new(-483.51, -5.10, 18.89)
+}
+
+-- UI Setup (Meow Hub Style) [cite: 267, 297]
+local par = (gethui and gethui()) or cg
+local screen = Instance.new("ScreenGui", par)
+screen.Name = "MeowKeekHub"
+
+local main = Instance.new("Frame", screen)
+main.Size = UDim2.new(0, 550, 0, 400)
+main.Position = UDim2.new(0.5, -275, 0.5, -200)
+main.BackgroundColor3 = bgc
+main.BorderSizePixel = 0
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+
+-- Animated Dots Background [cite: 267, 268]
+local function createDots(parent)
+    local container = Instance.new("Frame", parent)
+    container.Size = UDim2.new(1, 0, 1, 0)
+    container.BackgroundTransparency = 1
+    container.ZIndex = 0
+    for i = 1, 40 do
+        local dot = Instance.new("Frame", container)
+        dot.Size = UDim2.new(0, 3, 0, 3)
+        dot.Position = UDim2.new(math.random(), 0, math.random(), 0)
+        dot.BackgroundColor3 = pa
+        dot.BorderSizePixel = 0
+        Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+    end
+end
+createDots(main)
+
+-- Feature Scroll Area
+local scroll = Instance.new("ScrollingFrame", main)
+scroll.Size = UDim2.new(1, -20, 1, -60)
+scroll.Position = UDim2.new(0, 10, 0, 50)
+scroll.BackgroundTransparency = 1
+scroll.CanvasSize = UDim2.new(0, 0, 2.5, 0)
+scroll.ScrollBarThickness = 2
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0, 6)
+
+-- Feature Toggle Function
+local function addToggle(text, varName, onCallback, offCallback)
+    local btn = Instance.new("TextButton", scroll)
+    btn.Size = UDim2.new(1, -10, 0, 38)
+    btn.BackgroundColor3 = pd
+    btn.Text = text .. " [OFF]"
+    btn.TextColor3 = wh
+    btn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", btn)
+
+    btn.MouseButton1Click:Connect(function()
+        Enabled[varName] = not Enabled[varName]
+        btn.Text = text .. (Enabled[varName] and " [ON]" or " [OFF]")
+        btn.BackgroundColor3 = Enabled[varName] and pm or pd
+        if Enabled[varName] and onCallback then onCallback() end
+        if not Enabled[varName] and offCallback then offCallback() end
+    end)
+end
+
+-- Keek.v1 Features Integrated into Meow UI [cite: 103, 125, 276]
+addToggle("Aimbot", "Aimbot", startAimbot, stopAimbot)
+addToggle("Auto Steal", "AutoSteal", startAutoSteal, stopAutoSteal)
+addToggle("Anti Ragdoll", "AntiRagdoll", startAdvancedAntiRagdoll, stopAdvancedAntiRagdoll)
+addToggle("SpinBot", "SpinBot", startSpin, killSpin)
+addToggle("Jump Boost", "JumpBoost")
+addToggle("Float", "Float", startFloat, stopFloat)
+addToggle("Dodge", "Dodge", startDodge, stopDodge)
+
+-- Keek.v1 TP Logic [cite: 111, 118]
+addToggle("Auto TP Right", "AutoTPRight", startRagdollDetector, stopRagdollDetector)
+addToggle("Auto TP L2", "AutoTPL2", startRagdollDetector, stopRagdollDetector)
+
+-- Keybind to Toggle (RightControl for Meow Hub standard) [cite: 326]
+uis.InputBegan:Connect(function(i, g)
+    if not g and i.KeyCode == Enum.KeyCode.RightControl then
+        main.Visible = not main.Visible
+    end
+end)
+
+      print("keek.v1 loaded with Meow Hub UI. Press RightControl to toggle.")
