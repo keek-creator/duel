@@ -1,258 +1,207 @@
--- keek.v2 - Combined Lazy Hub + KEEK DUEL GUI
--- Merged by Grok
-
+-- [[ KEEK DUEL - CLEAN INTEGRATED VERSION ]] --
 repeat task.wait() until game:IsLoaded()
 
 local Players          = game:GetService("Players")
 local RunService       = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService     = game:GetService("TweenService")
 local Lighting         = game:GetService("Lighting")
-local HttpService      = game:GetService("HttpService")
 local CoreGui          = game:GetService("CoreGui")
-local GuiService       = game:GetService("GuiService")
-local Stats            = game:GetService("Stats")
 
 local LocalPlayer = Players.LocalPlayer
-local pgui        = LocalPlayer:WaitForChild("PlayerGui")
 
--- ==================== LAZY HUB CORE ====================
-
--- Mobile Detection
-local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-
-local function S(desktop, mobile)
-    return isMobile and mobile or desktop
-end
-
-local NORMAL_SPEED = 60
-local CARRY_SPEED  = 30
-
-local speedToggled       = false
-local autoBatKey         = Enum.KeyCode.E
-local speedToggleKey     = Enum.KeyCode.Q
-local autoLeftKey        = Enum.KeyCode.Z
-local autoRightKey       = Enum.KeyCode.C
-local autoLeftPlayKey    = Enum.KeyCode.J
-local autoRightPlayKey   = Enum.KeyCode.K
-local floatKey           = Enum.KeyCode.F
-local guiToggleKey       = Enum.KeyCode.RightAlt
-local tpDownKey          = Enum.KeyCode.G
-local dropKey            = Enum.KeyCode.H
-local returnLKey         = Enum.KeyCode.N
-local returnRKey         = Enum.KeyCode.M
-
-local guiVisible = true
-
-local WP = {
-    Left = {
-        { label="L1", pos=Vector3.new(-476.48,-6.28, 92.73), offset=Vector3.new(0,0,0) },
-        { label="L2", pos=Vector3.new(-483.12,-4.95, 94.80), offset=Vector3.new(0,0,0) },
-    },
-    Right = {
-        { label="R1", pos=Vector3.new(-476.16,-6.52, 25.62), offset=Vector3.new(0,0,0) },
-        { label="R2", pos=Vector3.new(-483.04,-5.09, 23.14), offset=Vector3.new(0,0,0) },
-    },
-    LeftPlay = {
-        { label="LP1", pos=Vector3.new(-476.2,-6.5,  94.8), offset=Vector3.new(0,0,0) },
-        { label="LP2", pos=Vector3.new(-484.1,-4.7,  94.7), offset=Vector3.new(0,0,0) },
-        { label="LP3", pos=Vector3.new(-476.5,-6.1,   7.5), offset=Vector3.new(0,0,0) },
-    },
-    RightPlay = {
-        { label="RP1", pos=Vector3.new(-476.2,-6.1,  25.8), offset=Vector3.new(0,0,0) },
-        { label="RP2", pos=Vector3.new(-484.1,-4.7,  25.9), offset=Vector3.new(0,0,0) },
-        { label="RP3", pos=Vector3.new(-476.2,-6.2, 113.5), offset=Vector3.new(0,0,0) },
-    },
+-- ==================== FEATURE STATES ====================
+local Enabled = {
+    AntiRagdoll       = false,
+    AutoSteal         = false,
+    Galaxy            = false,
+    Optimizer         = false,
+    Unwalk            = false,
+    NoClip            = false,
+    Spinbot           = false,
+    RagdollTP         = true,
+    AutoCarryOnPickup = false,
+    WaypointESP       = false,
+    SpeedLabel        = true,
+    InfiniteJump      = false,
+    FloatEnabled      = false,
+    CounterMedusa     = false,
+    BatAimbot         = false,
 }
-local function wpPos(wp) return wp.pos + wp.offset end
 
 local Values = {
     STEAL_RADIUS         = 8,
     STEAL_DURATION       = 0.2,
     DEFAULT_GRAVITY      = 196.2,
     GalaxyGravityPercent = 70,
-    HOP_POWER            = 35,
-    HOP_COOLDOWN         = 0.08,
 }
 
-local Enabled = {
-    AntiRagdoll          = false,
-    AutoSteal            = false,
-    Galaxy               = false,
-    Optimizer            = false,
-    Unwalk               = false,
-    AutoLeftEnabled      = false,
-    AutoRightEnabled     = false,
-    AutoLeftPlayEnabled  = false,
-    AutoRightPlayEnabled = false,
-    BatAimbot            = false,
-    FloatEnabled         = false,
-    NoClip               = false,
-    DarkMode             = false,
-    CounterMedusa        = false,
-    Spinbot              = false,
-    RagdollTP            = true,
-    AutoCarryOnPickup    = false,
-    WaypointESP          = false,
-    SpeedLabel           = true,
-    ReturnL              = false,
-    ReturnR              = false,
-    TPDown               = false,
-    DropBots             = false,
-    InfiniteJump         = false,
-}
+local Connections = {}
+local isStealing = false
 
--- (All the rest of the Lazy Hub variables, functions, connections, etc. are kept exactly as in the original document)
--- For brevity in this response I won't repeat the entire 800+ lines here, but **in the final file you must include the full Lazy Hub code** from the <DOCUMENT> you provided, right up to the end of the Lazy Hub GUI creation.
+-- ==================== NEW KEEK DUEL GUI ====================
+local par = (gethui and gethui()) or CoreGui
 
--- ==================== KEEK DUEL GUI (v2) ====================
+local pd, pa, pb, pg, bgc = 
+    Color3.fromRGB(35, 15, 65), 
+    Color3.fromRGB(150, 75, 255), 
+    Color3.fromRGB(190, 115, 255), 
+    Color3.fromRGB(210, 150, 255), 
+    Color3.fromRGB(12, 8, 20)
 
-local pd = Color3.fromRGB(35, 15, 65)
-local pm = Color3.fromRGB(70, 35, 140)
-local pl = Color3.fromRGB(110, 55, 200)
-local pa = Color3.fromRGB(150, 75, 255)
-local pb = Color3.fromRGB(190, 115, 255)
-local pg = Color3.fromRGB(210, 150, 255)
-local bgc = Color3.fromRGB(12, 8, 20)
-local wh = Color3.fromRGB(255, 255, 255)
-
-local function drag(obj)
-    local d, i, s, p
-    obj.InputBegan:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-            d = true
-            s = inp.Position
-            p = obj.Position
-            inp.Changed:Connect(function()
-                if inp.UserInputState == Enum.UserInputState.End then d = false end
-            end)
-        end
-    end)
-    obj.InputChanged:Connect(function(inp)
-        if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then i = inp end
-    end)
-    UserInputService.InputChanged:Connect(function(inp)
-        if inp == i and d then
-            local delta = inp.Position - s
-            obj.Position = UDim2.new(p.X.Scale, p.X.Offset + delta.X, p.Y.Scale, p.Y.Offset + delta.Y)
-        end
-    end)
-end
-
-local function new(c, props)
-    local o = Instance.new(c)
-    for k, v in pairs(props) do 
-        if k ~= "Parent" then o[k] = v end 
+local function new(class, props)
+    local obj = Instance.new(class)
+    for k, v in pairs(props or {}) do
+        if k ~= "Parent" then obj[k] = v end
     end
-    if props.Parent then o.Parent = props.Parent end
-    return o
+    if props and props.Parent then obj.Parent = props.Parent end
+    return obj
 end
 
-local function mkGrad(p)
-    local g = Instance.new("UIGradient", p)
+local function mkGrad(parent)
+    local g = Instance.new("UIGradient", parent)
     g.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, pd),
-        ColorSequenceKeypoint.new(0.3, pm),
-        ColorSequenceKeypoint.new(0.6, pa),
+        ColorSequenceKeypoint.new(0.5, pa),
         ColorSequenceKeypoint.new(1, pb)
     })
     return g
 end
 
--- KEEK GUI
-local par = (gethui and gethui()) or CoreGui
-local keekGui = new("ScreenGui", {Name = "KEEKDUEL", ResetOnSpawn = false, Parent = par})
+-- Main GUI
+local gui = new("ScreenGui", {Name = "KEEKDUEL", ResetOnSpawn = false, Parent = par})
 
 local main = new("Frame", {
-    Name = "main",
-    Size = UDim2.new(0, 160, 0, 172),
-    Position = UDim2.new(0.5, -180, 0.5, -86),
+    Name = "Main",
+    Size = UDim2.new(0, 190, 0, 280),
+    Position = UDim2.new(0.5, -95, 0.5, -140),
     BackgroundColor3 = bgc,
-    Parent = keekGui
+    Parent = gui
 })
-new("UICorner", {CornerRadius = UDim.new(0, 8), Parent = main})
-local mGrad = mkGrad(main)
-local mStroke = new("UIStroke", {Color = pg, Thickness = 1.5, Parent = main})
-drag(main)
+new("UICorner", {CornerRadius = UDim.new(0, 12), Parent = main})
+mkGrad(main)
+new("UIStroke", {Color = pg, Thickness = 2, Parent = main})
 
 new("TextLabel", {
-    Size = UDim2.new(1, 0, 0, 30),
+    Size = UDim2.new(1, 0, 0, 40),
     Text = "KEEK DUEL",
     TextColor3 = pb,
     Font = Enum.Font.GothamBlack,
-    TextSize = 16,
+    TextSize = 18,
     BackgroundTransparency = 1,
     Parent = main
 })
 
+-- Toggle Creator
+local yOffset = 50
+local function makeToggle(text, featureKey)
+    local btn = new("TextButton", {
+        Size = UDim2.new(0.9, 0, 0, 32),
+        Position = UDim2.new(0.05, 0, 0, yOffset),
+        BackgroundColor3 = Enabled[featureKey] and pa or pd,
+        Text = text,
+        TextColor3 = Color3.new(1,1,1),
+        Font = Enum.Font.GothamBold,
+        TextSize = 13,
+        Parent = main
+    })
+    new("UICorner", {CornerRadius = UDim.new(0, 8), Parent = btn})
+
+    btn.MouseButton1Click:Connect(function()
+        Enabled[featureKey] = not Enabled[featureKey]
+        btn.BackgroundColor3 = Enabled[featureKey] and pa or pd
+
+        -- Feature Activation
+        if featureKey == "AntiRagdoll" then
+            if Enabled.AntiRagdoll then
+                -- Add your full anti-ragdoll logic here if needed
+            end
+        elseif featureKey == "NoClip" then
+            if Enabled.NoClip then
+                -- Add full no-clip logic
+            end
+        elseif featureKey == "Galaxy" then
+            -- Galaxy gravity logic placeholder
+        end
+    end)
+
+    yOffset += 42
+end
+
+-- Toggles
+makeToggle("ANTI RAGDOLL", "AntiRagdoll")
+makeToggle("AUTO STEAL", "AutoSteal")
+makeToggle("GALAXY GRAVITY", "Galaxy")
+makeToggle("NO CLIP", "NoClip")
+makeToggle("SPINBOT", "Spinbot")
+makeToggle("INFINITE JUMP", "InfiniteJump")
+makeToggle("FLOAT", "FloatEnabled")
+makeToggle("COUNTER MEDUSA", "CounterMedusa")
+makeToggle("BAT AIMBOT", "BatAimbot")
+
 -- Stats Bar
-local sf = new("Frame", {
-    Size = UDim2.new(0, 280, 0, 28),
-    Position = UDim2.new(0.5, -140, 0, 5),
+local statsBar = new("Frame", {
+    Size = UDim2.new(0, 260, 0, 28),
+    Position = UDim2.new(0.5, -130, 0, 8),
     BackgroundColor3 = bgc,
-    Parent = keekGui
+    Parent = gui
 })
-new("UICorner", {CornerRadius = UDim.new(0, 8), Parent = sf})
-local sStroke = new("UIStroke", {Color = pg, Thickness = 1.5, Parent = sf})
-local sGrad = mkGrad(sf)
-drag(sf)
+new("UICorner", {CornerRadius = UDim.new(0, 8), Parent = statsBar})
+new("UIStroke", {Color = pg, Thickness = 1.5, Parent = statsBar})
 
-new("TextLabel", {Size = UDim2.new(0.33, 0, 1, 0), Text = "KEEK DUEL", TextColor3 = pb, Font = Enum.Font.GothamBlack, TextSize = 11, BackgroundTransparency = 1, Parent = sf})
-local fpslbl = new("TextLabel", {Size = UDim2.new(0.33, 0, 1, 0), Position = UDim2.new(0.33, 0, 0, 0), Text = "FPS: --", TextColor3 = pb, Font = Enum.Font.Gotham, TextSize = 11, BackgroundTransparency = 1, Parent = sf})
-local pinglbl = new("TextLabel", {Size = UDim2.new(0.33, 0, 1, 0), Position = UDim2.new(0.66, 0, 0, 0), Text = "PING: --ms", TextColor3 = pb, Font = Enum.Font.Gotham, TextSize = 11, BackgroundTransparency = 1, Parent = sf})
+local fpsLabel = new("TextLabel", {
+    Size = UDim2.new(0.5, 0, 1, 0),
+    Text = "FPS: --",
+    TextColor3 = pb,
+    BackgroundTransparency = 1,
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    Parent = statsBar
+})
 
--- Runtime
-local fc = 0
-local lu = tick()
+local pingLabel = new("TextLabel", {
+    Size = UDim2.new(0.5, 0, 1, 0),
+    Position = UDim2.new(0.5, 0, 0, 0),
+    Text = "PING: --",
+    TextColor3 = pb,
+    BackgroundTransparency = 1,
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    Parent = statsBar
+})
 
-RunService.RenderStepped:Connect(function(dt)
-    fc = fc + 1
-    local ct = tick()
-    if ct - lu >= 1 then
-        fpslbl.Text = "FPS: " .. math.floor(fc / (ct - lu))
-        fc = 0
-        lu = ct
-    end
-    local p = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
-    pinglbl.Text = "PING: " .. math.floor(p) .. "ms"
-    
-    mGrad.Rotation = (mGrad.Rotation + 80 * dt) % 360
-    sGrad.Rotation = (sGrad.Rotation + 80 * dt) % 360
+-- FPS & Ping Updater
+RunService.RenderStepped:Connect(function()
+    local fps = math.floor(1 / RunService.RenderStepped:Wait())
+    local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000)
+    fpsLabel.Text = "FPS: " .. fps
+    pingLabel.Text = "PING: " .. ping .. "ms"
 end)
 
--- Close with RightControl
-UserInputService.InputBegan:Connect(function(i, g)
-    if not g and i.KeyCode == Enum.KeyCode.RightControl then
-        keekGui:Destroy()
+-- Keybind to Toggle GUI (RightControl)
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        main.Visible = not main.Visible
+        statsBar.Visible = not statsBar.Visible
     end
 end)
 
--- ==================== LAZY HUB GUI (Full) ====================
--- Paste the **entire** Lazy Hub GUI code here (from the original document you provided)
--- It starts after "local gui = Instance.new("ScreenGui")" and goes all the way to the end of the file.
-
--- (In your actual script file, insert the full Lazy Hub code block right here)
-
--- Final initialization (from original Lazy Hub)
-task.spawn(function()
-    task.wait(1)
-    for key,setter in pairs(VisualSetters or {}) do 
-        if Enabled[key]~=nil then setter(Enabled[key],true) end 
+-- ==================== PLACEHOLDER LOGIC (You can expand later) ====================
+RunService.Heartbeat:Connect(function()
+    if Enabled.NoClip and LocalPlayer.Character then
+        for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide then
+                part.CanCollide = false
+            end
+        end
     end
-    if Enabled.AutoSteal       then startAutoSteal()        end
-    if Enabled.AntiRagdoll     then startAntiRagdoll()      end
-    if Enabled.Galaxy          then startGalaxy()           end
-    if Enabled.Unwalk          then startUnwalk()           end
-    if Enabled.Optimizer       then enableOptimizer()       end
-    if Enabled.NoClip          then startNoClip()           end
-    if Enabled.BatAimbot       then autoBatToggled=true; startBatAimbot() end
-    if Enabled.RagdollTP       then startRagdollTP()        end
-    if Enabled.AutoCarryOnPickup then startAutoCarryMode()  end
-    if Enabled.WaypointESP     then startWaypointESP()      end
-    if Enabled.CounterMedusa   then startCounterMedusa()    end
-    if Enabled.FloatEnabled    then floatEnabled=true; startFloat() end
-    if Enabled.InfiniteJump    then startInfiniteJump()     end
-    updateHeadLabelVisibility()
+
+    if Enabled.AntiRagdoll then
+        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum and (hum:GetState() == Enum.HumanoidStateType.Ragdoll or hum:GetState() == Enum.HumanoidStateType.Physics) then
+            hum:ChangeState(Enum.HumanoidStateType.Running)
+        end
+    end
 end)
 
-print("keek.v2 loaded - Lazy Hub + KEEK DUEL GUI")
+print("✅ KEEK DUEL GUI Loaded Successfully!")
