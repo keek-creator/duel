@@ -1,0 +1,428 @@
+-- MECO HUB | Steal a Brainrot | Mobile
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local lp = Players.LocalPlayer
+
+local ST = {speed=16,float=false,autoL=false,autoR=false,aim=false,aimH=3,steal=false,unwalk=false,esp=false}
+
+local function Hum() return lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") end
+local function HRP() return lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") end
+
+local sg = Instance.new("ScreenGui")
+sg.Name="MECOHUB" sg.ResetOnSpawn=false sg.IgnoreGuiInset=true sg.DisplayOrder=999
+if not pcall(function() sg.Parent=gethui() end) then sg.Parent=lp:WaitForChild("PlayerGui") end
+
+local SC = Instance.new("UIScale",sg) SC.Scale=1
+
+local BG=Color3.fromRGB(9,9,14)
+local PUR=Color3.fromRGB(100,0,200)
+local PLT=Color3.fromRGB(155,60,255)
+local PDK=Color3.fromRGB(45,0,95)
+local TXT=Color3.fromRGB(230,200,255)
+local DON=Color3.fromRGB(155,50,255)
+local DOF=Color3.fromRGB(55,55,70)
+
+local function drag(f)
+    local on,s1,s2=false,nil,nil
+    f.InputBegan:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseButton1 then
+            on=true s1=i.Position s2=f.Position
+        end
+    end)
+    f.InputEnded:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseButton1 then on=false end
+    end)
+    UIS.InputChanged:Connect(function(i)
+        if on and (i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseMovement) then
+            local d=i.Position-s1
+            f.Position=UDim2.new(s2.X.Scale,s2.X.Offset+d.X,s2.Y.Scale,s2.Y.Offset+d.Y)
+        end
+    end)
+end
+
+local function F(p,w,h,x,y,c)
+    local f=Instance.new("Frame",p)
+    f.Size=UDim2.new(0,w,0,h) f.Position=UDim2.new(0,x,0,y)
+    f.BackgroundColor3=c or BG f.BorderSizePixel=0
+    Instance.new("UICorner",f).CornerRadius=UDim.new(0,12)
+    local s=Instance.new("UIStroke",f) s.Color=PUR s.Thickness=2
+    return f
+end
+
+local function Tog(p,lbl,key,x,y,w,cb)
+    local f=F(p,w or 158,40,x or 0,y or 0,PDK)
+    drag(f)
+    local d=Instance.new("Frame",f)
+    d.Size=UDim2.new(0,11,0,11) d.Position=UDim2.new(0,10,0.5,-5)
+    d.BackgroundColor3=ST[key] and DON or DOF d.BorderSizePixel=0
+    Instance.new("UICorner",d).CornerRadius=UDim.new(1,0)
+    local t=Instance.new("TextLabel",f)
+    t.Size=UDim2.new(1,-28,1,0) t.Position=UDim2.new(0,26,0,0)
+    t.BackgroundTransparency=1 t.TextColor3=TXT t.Font=Enum.Font.GothamBold t.TextSize=12
+    t.TextXAlignment=Enum.TextXAlignment.Left
+    t.Text=ST[key] and (lbl.." [ON]") or lbl
+    local b=Instance.new("TextButton",f)
+    b.Size=UDim2.new(1,0,1,0) b.BackgroundTransparency=1 b.Text=""
+    b.MouseButton1Click:Connect(function()
+        ST[key]=not ST[key]
+        d.BackgroundColor3=ST[key] and DON or DOF
+        t.Text=ST[key] and (lbl.." [ON]") or lbl
+        if cb then pcall(cb,ST[key]) end
+    end)
+    return f,d,t
+end
+
+local function Btn(p,lbl,x,y,w,h,cb)
+    local b=Instance.new("TextButton",p)
+    b.Size=UDim2.new(0,w or 110,0,h or 42) b.Position=UDim2.new(0,x or 0,0,y or 0)
+    b.BackgroundColor3=PUR b.BorderSizePixel=0
+    b.Text=lbl b.TextSize=14 b.TextColor3=Color3.new(1,1,1) b.Font=Enum.Font.GothamBold
+    Instance.new("UICorner",b).CornerRadius=UDim.new(0,12)
+    local s=Instance.new("UIStroke",b) s.Color=PLT s.Thickness=2
+    drag(b)
+    b.MouseButton1Click:Connect(function()
+        if cb then pcall(cb) end
+    end)
+    return b
+end
+
+-- TITLE
+local title=F(sg,210,42,0,0,PUR)
+title.Position=UDim2.new(0.5,-105,0,88)
+drag(title)
+local tl=Instance.new("TextLabel",title)
+tl.Size=UDim2.new(1,0,1,0) tl.BackgroundTransparency=1
+tl.Text="MECO HUB" tl.TextSize=17 tl.Font=Enum.Font.GothamBold
+tl.TextColor3=Color3.fromRGB(255,180,255) tl.TextXAlignment=Enum.TextXAlignment.Center
+
+-- LEFT GROUP (MENU + sub buttons)
+local LG=Instance.new("Frame",sg)
+LG.Size=UDim2.new(0,165,0,300) LG.Position=UDim2.new(0,5,0.28,0)
+LG.BackgroundTransparency=1 LG.BorderSizePixel=0
+drag(LG)
+
+-- MENU button
+local menuOpen=true
+local mf=F(LG,128,42,0,0,PDK)
+local ml=Instance.new("TextLabel",mf)
+ml.Size=UDim2.new(1,0,1,0) ml.BackgroundTransparency=1 ml.Text="MENU"
+ml.TextSize=15 ml.Font=Enum.Font.GothamBold ml.TextColor3=TXT ml.TextXAlignment=Enum.TextXAlignment.Center
+local mb=Instance.new("TextButton",mf)
+mb.Size=UDim2.new(1,0,1,0) mb.BackgroundTransparency=1 mb.Text=""
+
+-- content frame
+local LC=Instance.new("Frame",LG)
+LC.Size=UDim2.new(0,165,0,255) LC.Position=UDim2.new(0,0,0,47)
+LC.BackgroundTransparency=1 LC.BorderSizePixel=0
+
+mb.MouseButton1Click:Connect(function()
+    menuOpen=not menuOpen
+    LC.Visible=menuOpen
+    ml.Text=menuOpen and "MENU" or "MENU [X]"
+end)
+
+-- Speed popup
+local SPvis=false
+local SP=F(sg,260,190,175,0,BG)
+SP.Position=UDim2.new(0,175,0.28,0) SP.Visible=false
+drag(SP)
+local spth=Instance.new("Frame",SP)
+spth.Size=UDim2.new(1,0,0,30) spth.BackgroundColor3=PUR spth.BorderSizePixel=0
+Instance.new("UICorner",spth).CornerRadius=UDim.new(0,10)
+local sptl=Instance.new("TextLabel",spth)
+sptl.Size=UDim2.new(1,0,1,0) sptl.BackgroundTransparency=1 sptl.Text="SPEED SETTINGS"
+sptl.TextSize=13 sptl.Font=Enum.Font.GothamBold sptl.TextColor3=Color3.new(1,1,1) sptl.TextXAlignment=Enum.TextXAlignment.Center
+
+local spvl=Instance.new("TextLabel",SP)
+spvl.Size=UDim2.new(1,0,0,24) spvl.Position=UDim2.new(0,0,0,33)
+spvl.BackgroundTransparency=1 spvl.Text="Speed: 16"
+spvl.TextSize=13 spvl.Font=Enum.Font.GothamBold spvl.TextColor3=PLT spvl.TextXAlignment=Enum.TextXAlignment.Center
+
+local str=Instance.new("Frame",SP)
+str.Size=UDim2.new(1,-20,0,12) str.Position=UDim2.new(0,10,0,60)
+str.BackgroundColor3=PDK str.BorderSizePixel=0
+Instance.new("UICorner",str).CornerRadius=UDim.new(0,6)
+local sfi=Instance.new("Frame",str)
+sfi.Size=UDim2.new(0,0,1,0) sfi.BackgroundColor3=PUR sfi.BorderSizePixel=0
+Instance.new("UICorner",sfi).CornerRadius=UDim.new(0,6)
+
+local sliding=false
+str.InputBegan:Connect(function(i)
+    if i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseButton1 then sliding=true end
+end)
+str.InputEnded:Connect(function(i)
+    if i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseButton1 then sliding=false end
+end)
+UIS.InputChanged:Connect(function(i)
+    if sliding and (i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseMovement) then
+        local r=math.clamp((i.Position.X-str.AbsolutePosition.X)/str.AbsoluteSize.X,0,1)
+        local v=math.floor(16+r*(300-16))
+        ST.speed=v sfi.Size=UDim2.new(r,0,1,0) spvl.Text="Speed: "..v
+        local h=Hum() if h and not ST.unwalk then h.WalkSpeed=v end
+    end
+end)
+
+local presets={{16,"Walk"},{50,"Fast"},{100,"Fly"},{200,"Max"}}
+for i,pr in ipairs(presets) do
+    local pb=Instance.new("TextButton",SP)
+    pb.Size=UDim2.new(0,52,0,26) pb.Position=UDim2.new(0,6+(i-1)*61,0,78)
+    pb.BackgroundColor3=PDK pb.Text=pr[2] pb.TextSize=11 pb.TextColor3=TXT
+    pb.Font=Enum.Font.GothamBold pb.BorderSizePixel=0
+    Instance.new("UICorner",pb).CornerRadius=UDim.new(0,8)
+    local pbs=Instance.new("UIStroke",pb) pbs.Color=PUR pbs.Thickness=1.5
+    pb.MouseButton1Click:Connect(function()
+        ST.speed=pr[1]
+        sfi.Size=UDim2.new((pr[1]-16)/(300-16),0,1,0)
+        spvl.Text="Speed: "..pr[1]
+        local h=Hum() if h and not ST.unwalk then h.WalkSpeed=pr[1] end
+    end)
+end
+
+local ahl=Instance.new("TextLabel",SP)
+ahl.Size=UDim2.new(1,0,0,22) ahl.Position=UDim2.new(0,0,0,112)
+ahl.BackgroundTransparency=1 ahl.Text="Aim Height: 3"
+ahl.TextSize=12 ahl.Font=Enum.Font.GothamBold ahl.TextColor3=PLT ahl.TextXAlignment=Enum.TextXAlignment.Center
+
+local atr=Instance.new("Frame",SP)
+atr.Size=UDim2.new(1,-20,0,12) atr.Position=UDim2.new(0,10,0,136)
+atr.BackgroundColor3=PDK atr.BorderSizePixel=0
+Instance.new("UICorner",atr).CornerRadius=UDim.new(0,6)
+local afi=Instance.new("Frame",atr)
+afi.Size=UDim2.new(0.2,0,1,0) afi.BackgroundColor3=PUR afi.BorderSizePixel=0
+Instance.new("UICorner",afi).CornerRadius=UDim.new(0,6)
+
+local asliding=false
+atr.InputBegan:Connect(function(i)
+    if i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseButton1 then asliding=true end
+end)
+atr.InputEnded:Connect(function(i)
+    if i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseButton1 then asliding=false end
+end)
+UIS.InputChanged:Connect(function(i)
+    if asliding and (i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseMovement) then
+        local r=math.clamp((i.Position.X-atr.AbsolutePosition.X)/atr.AbsoluteSize.X,0,1)
+        ST.aimH=math.floor(r*15) afi.Size=UDim2.new(r,0,1,0) ahl.Text="Aim Height: "..ST.aimH
+    end
+end)
+
+-- UI SCALE
+local SCF=F(sg,230,68,0,0,BG)
+SCF.Position=UDim2.new(0.5,-115,0,8) drag(SCF)
+local scl=Instance.new("TextLabel",SCF)
+scl.Size=UDim2.new(1,0,0,22) scl.Position=UDim2.new(0,0,0,4)
+scl.BackgroundTransparency=1 scl.Text="UI Scale"
+scl.TextSize=12 scl.Font=Enum.Font.GothamBold scl.TextColor3=PLT scl.TextXAlignment=Enum.TextXAlignment.Center
+local scales={{0.7,"S"},{1.0,"M"},{1.3,"L"},{1.6,"XL"}}
+for i,sc in ipairs(scales) do
+    local pb=Instance.new("TextButton",SCF)
+    pb.Size=UDim2.new(0,46,0,26) pb.Position=UDim2.new(0,6+(i-1)*54,0,30)
+    pb.BackgroundColor3=PDK pb.Text=sc[2] pb.TextSize=12 pb.TextColor3=TXT
+    pb.Font=Enum.Font.GothamBold pb.BorderSizePixel=0
+    Instance.new("UICorner",pb).CornerRadius=UDim.new(0,8)
+    local pbs=Instance.new("UIStroke",pb) pbs.Color=PUR pbs.Thickness=1.5
+    pb.MouseButton1Click:Connect(function() SC.Scale=sc[1] scl.Text="Scale: "..sc[1] end)
+end
+
+-- LEFT BUTTONS
+local function LBtn(lbl,key,yy,cb)
+    local f=F(LC,158,40,0,yy,PDK)
+    local d=Instance.new("Frame",f)
+    d.Size=UDim2.new(0,10,0,10) d.Position=UDim2.new(0,10,0.5,-5)
+    d.BackgroundColor3=DOF d.BorderSizePixel=0
+    Instance.new("UICorner",d).CornerRadius=UDim.new(1,0)
+    local t=Instance.new("TextLabel",f)
+    t.Size=UDim2.new(1,-26,1,0) t.Position=UDim2.new(0,24,0,0)
+    t.BackgroundTransparency=1 t.TextColor3=TXT t.Font=Enum.Font.GothamBold t.TextSize=12
+    t.TextXAlignment=Enum.TextXAlignment.Left t.Text=lbl
+    local b=Instance.new("TextButton",f)
+    b.Size=UDim2.new(1,0,1,0) b.BackgroundTransparency=1 b.Text=""
+    b.MouseButton1Click:Connect(function()
+        if cb then pcall(cb,d,t) end
+    end)
+    return f,d,t
+end
+
+-- Speed Settings
+LBtn("Speed Settings",nil,0,function(d,t)
+    SPvis=not SPvis SP.Visible=SPvis
+    d.BackgroundColor3=SPvis and DON or DOF
+end)
+
+-- TP Right
+LBtn("TP [Right]",nil,46,function(d,t)
+    local h=HRP() if h then h.CFrame=h.CFrame+Vector3.new(25,0,0) end
+    d.BackgroundColor3=DON task.delay(0.3,function() d.BackgroundColor3=DOF end)
+end)
+
+-- TP Left
+LBtn("TP [Left]",nil,92,function(d,t)
+    local h=HRP() if h then h.CFrame=h.CFrame+Vector3.new(-25,0,0) end
+    d.BackgroundColor3=DON task.delay(0.3,function() d.BackgroundColor3=DOF end)
+end)
+
+-- Unwalk
+local _,uDot,uLbl=LBtn("Unwalk",nil,138,function(d,t)
+    ST.unwalk=not ST.unwalk
+    d.BackgroundColor3=ST.unwalk and DON or DOF
+    t.Text=ST.unwalk and "Unwalk [ON]" or "Unwalk"
+    local h=Hum() if h then h.WalkSpeed=ST.unwalk and 0 or ST.speed end
+end)
+
+-- ESP Speed
+local _,eDot,eLbl=LBtn("ESP Speed",nil,184,function(d,t)
+    ST.esp=not ST.esp
+    d.BackgroundColor3=ST.esp and DON or DOF
+    t.Text=ST.esp and "ESP Speed [ON]" or "ESP Speed"
+end)
+
+-- RIGHT GROUP
+local RG=Instance.new("Frame",sg)
+RG.Size=UDim2.new(0,168,0,250) RG.Position=UDim2.new(1,-174,0.18,0)
+RG.BackgroundTransparency=1 RG.BorderSizePixel=0
+drag(RG)
+
+Tog(RG,"Float","float",0,0,160,function(on)
+    if not on then
+        local h=HRP()
+        if h then
+            local bp=h:FindFirstChild("MECO_BP") if bp then bp:Destroy() end
+            local hm=Hum() if hm then pcall(function() hm:ChangeState(Enum.HumanoidStateType.GettingUp) end) end
+        end
+    end
+end)
+
+Tog(RG,"Auto Left","autoL",0,46,160,function(on) if on then ST.autoR=false end end)
+Tog(RG,"Auto Right","autoR",0,92,160,function(on) if on then ST.autoL=false end end)
+Tog(RG,"Aimbot","aim",0,138,160)
+Tog(RG,"Auto Steal","steal",0,184,160)
+
+-- DROP BUTTON
+local DB=Btn(sg,"DROP",0,0,108,44,function()
+    local WS=game:GetService("Workspace")
+    for _,v in pairs(WS:GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            local n=(v.ActionText..v.ObjectText):lower()
+            if n:find("drop") or n:find("release") then
+                pcall(function() fireproximityprompt(v) end)
+            end
+        end
+    end
+    for _,v in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+        if v:IsA("RemoteEvent") and v.Name:lower():find("drop") then
+            pcall(function() v:FireServer() end)
+        end
+    end
+end)
+DB.Position=UDim2.new(0.5,-54,0.56,0)
+
+-- ESP
+local bills={}
+local function clearESP()
+    for i=1,#bills do if bills[i] and bills[i].Parent then bills[i]:Destroy() end end
+    bills={}
+end
+local function buildESP()
+    clearESP()
+    if not ST.esp then return end
+    for _,p in pairs(Players:GetPlayers()) do
+        if p~=lp and p.Character then
+            local hr=p.Character:FindFirstChild("HumanoidRootPart")
+            local hm=p.Character:FindFirstChildOfClass("Humanoid")
+            if hr and hm then
+                local bb=Instance.new("BillboardGui",hr)
+                bb.Size=UDim2.new(0,110,0,44) bb.StudsOffset=Vector3.new(0,4,0)
+                bb.AlwaysOnTop=true bb.Adornee=hr
+                local n=Instance.new("TextLabel",bb)
+                n.Size=UDim2.new(1,0,0.5,0) n.BackgroundTransparency=1
+                n.Text=p.Name n.TextSize=12 n.Font=Enum.Font.GothamBold
+                n.TextColor3=PLT n.TextStrokeTransparency=0 n.TextXAlignment=Enum.TextXAlignment.Center
+                local s=Instance.new("TextLabel",bb)
+                s.Size=UDim2.new(1,0,0.5,0) s.Position=UDim2.new(0,0,0.5,0)
+                s.BackgroundTransparency=1 s.Text="SPD:"..math.floor(hm.WalkSpeed)
+                s.TextSize=11 s.Font=Enum.Font.Gotham s.TextXAlignment=Enum.TextXAlignment.Center
+                s.TextColor3=Color3.fromRGB(255,230,60) s.TextStrokeTransparency=0
+                bills[#bills+1]=bb
+            end
+        end
+    end
+end
+
+-- AIMBOT
+local function nearest()
+    local cam=game:GetService("Workspace").CurrentCamera
+    local best,bd=nil,math.huge
+    for _,p in pairs(Players:GetPlayers()) do
+        if p~=lp and p.Character then
+            local hr=p.Character:FindFirstChild("HumanoidRootPart")
+            local hm=p.Character:FindFirstChildOfClass("Humanoid")
+            if hr and hm and hm.Health>0 then
+                local sp,vis=cam:WorldToScreenPoint(hr.Position)
+                if vis then
+                    local cv=cam.ViewportSize
+                    local d=(Vector2.new(sp.X,sp.Y)-Vector2.new(cv.X/2,cv.Y/2)).Magnitude
+                    if d<bd then bd=d best=p end
+                end
+            end
+        end
+    end
+    return best
+end
+
+-- FLOAT
+local function applyFloat()
+    local hr=HRP() local hm=Hum()
+    if not hr or not hm then return end
+    pcall(function() hm:ChangeState(Enum.HumanoidStateType.Physics) end)
+    local bp=hr:FindFirstChild("MECO_BP")
+    if not bp then
+        bp=Instance.new("BodyPosition",hr)
+        bp.Name="MECO_BP" bp.MaxForce=Vector3.new(0,math.huge,0) bp.D=500 bp.P=5000
+    end
+    bp.Position=hr.Position
+end
+
+-- STEAL
+local function doSteal()
+    local hr=HRP() if not hr then return end
+    for _,v in pairs(game:GetService("Workspace"):GetDescendants()) do
+        if v:IsA("ProximityPrompt") then
+            local n=(v.ActionText..v.ObjectText):lower()
+            if n:find("steal") or n:find("grab") or n:find("collect") then
+                local pt=v.Parent
+                if pt and pt:IsA("BasePart") and (hr.Position-pt.Position).Magnitude<20 then
+                    pcall(function() fireproximityprompt(v) end)
+                end
+            end
+        end
+    end
+end
+
+-- MAIN LOOP
+local et=0
+RunService.Heartbeat:Connect(function(dt)
+    local hm=Hum() local hr=HRP()
+    if hm and not ST.unwalk then hm.WalkSpeed=ST.speed end
+    if ST.float then applyFloat() end
+    if hr then
+        if ST.autoL then hr.CFrame=hr.CFrame*CFrame.new(-0.3,0,0) end
+        if ST.autoR then hr.CFrame=hr.CFrame*CFrame.new(0.3,0,0) end
+        if ST.aim then
+            local t=nearest()
+            if t and t.Character then
+                local th=t.Character:FindFirstChild("HumanoidRootPart")
+                if th then hr.CFrame=CFrame.new(hr.Position,Vector3.new(th.Position.X,hr.Position.Y+ST.aimH,th.Position.Z)) end
+            end
+        end
+    end
+    if ST.steal then doSteal() end
+    et=et+dt
+    if et>=2 then et=0 buildESP() end
+end)
+
+lp.CharacterAdded:Connect(function()
+    task.wait(1)
+    if ST.unwalk then local h=Hum() if h then h.WalkSpeed=0 end end
+end)
+
+print("[MECO HUB] Loaded OK")
