@@ -1,7 +1,3 @@
-
---- JOIN FOR BEST SOURCE
-
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -189,7 +185,7 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 -- ═══════════════════════════════════════════════════════════════
---  FLOATING "NINE HUB" TITLE BAR
+--  FLOATING "Keek" TITLE BAR
 -- ═══════════════════════════════════════════════════════════════
 local titleBar = Instance.new("Frame", sg)
 titleBar.Size = UDim2.new(0, 280, 0, 40)
@@ -221,7 +217,7 @@ local logo = Instance.new("ImageLabel", titleBar)
 logo.Size = UDim2.new(0, 28, 0, 28)
 logo.Position = UDim2.new(0, 8, 0.5, -14)
 logo.BackgroundTransparency = 1
-logo.Image = "rbxassetid://7072719338" -- you can change this ID
+logo.Image = "rbxassetid://119284966949" -- you can change this ID
 logo.ZIndex = 7
 
 
