@@ -1235,7 +1235,7 @@ end
 local extraTitle = Instance.new("TextLabel", extraFrame)
 extraTitle.Size = UDim2.new(1, 0, 0, 25)
 extraTitle.BackgroundColor3 = THEME.header
-extraTitle.Text = "Syrian - HUB"
+extraTitle.Text = "keek - HUB"
 extraTitle.Font = Enum.Font.GothamBold
 extraTitle.TextColor3 = THEME.accent
 extraTitle.TextSize = 14
