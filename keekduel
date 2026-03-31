@@ -1,9 +1,3 @@
---- leak by SK | SOURCE
-
---- JOIN FOR BEST SOURCE
-
---- discord.gg/AbKUBeVCga
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -23,7 +17,7 @@ local C = {
 }
 
 local sg = Instance.new("ScreenGui")
-sg.Name = "NINE_HUB"
+sg.Name = "Keek_duel"
 sg.ResetOnSpawn = false
 sg.IgnoreGuiInset = true
 sg.Parent = Player.PlayerGui
@@ -191,7 +185,7 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 -- ═══════════════════════════════════════════════════════════════
---  FLOATING "NINE HUB" TITLE BAR
+--  FLOATING "KEEK HUB" TITLE BAR
 -- ═══════════════════════════════════════════════════════════════
 local titleBar = Instance.new("Frame", sg)
 titleBar.Size = UDim2.new(0, 280, 0, 40)
@@ -210,7 +204,7 @@ titleBarStroke.Transparency = 0.35
 local titleBarLabel = Instance.new("TextLabel", titleBar)
 titleBarLabel.Size = UDim2.new(1, 0, 1, 0)
 titleBarLabel.BackgroundTransparency = 1
-titleBarLabel.Text = "PENAYFLEX"
+titleBarLabel.Text = "KEEK"
 titleBarLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleBarLabel.Font = Enum.Font.GothamBold
 titleBarLabel.TextSize = 20
