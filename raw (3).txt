@@ -1,0 +1,1435 @@
+-- ================= SERVICES =================
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local Player = Players.LocalPlayer
+
+-- ================= THEME (NineHub Style) =================
+local THEME = {
+    bg          = Color3.fromRGB(22, 22, 22),
+    header      = Color3.fromRGB(28, 28, 28),
+    row         = Color3.fromRGB(30, 30, 30),
+    toggleOff   = Color3.fromRGB(60, 60, 60),
+    toggleBall  = Color3.fromRGB(150, 150, 150),
+    input       = Color3.fromRGB(10, 10, 10),
+    inputStroke = Color3.fromRGB(70, 70, 70),
+    text        = Color3.fromRGB(210, 210, 210),
+    primary     = Color3.fromRGB(50, 50, 50),
+    secondary   = Color3.fromRGB(80, 80, 80),
+    accent      = Color3.fromRGB(255, 180, 0),
+    white       = Color3.fromRGB(255, 255, 255),
+    black       = Color3.fromRGB(0, 0, 0),
+    dotOn       = Color3.fromRGB(100, 220, 100),
+    dotOff      = Color3.fromRGB(60, 60, 60),
+}
+
+-- ================= SETTINGS =================
+local Enabled = {
+    Life = false,
+    Right = false,
+    Aimbot = false,
+    SpeedBoost = false,
+    AutoSteal = false,
+    JumpBoost = false,
+    SpinBot = false,
+    AntiRagdoll = false,
+    Unwalk = false,
+    Galaxy = false,
+    Float = false,
+    Dodge = false,
+    ESP = true,
+    ExtraSpeed = false,
+    BatTP = false,
+    HitboxExpander = false,
+    AutoTPRagdoll = false, -- هذا سيتحكم في المراقبة العامة
+    AutoTPRight = false,    -- جديد: تفعيل TP رايت
+    AutoTPL2 = false,       -- جديد: تفعيل TP L2
+}
+
+local Values = {
+    BoostSpeed = 30.6,
+    ExtraSpeedValue = 57.5,
+    JumpPower = 28,
+    StealingSpeedValue = 30.6,
+    STEAL_RADIUS = 7,
+    STEAL_DURATION = 0.2,
+    L2_RADIUS = 5,
+    R2_RADIUS = 5,
+    SpeedToL1 = 57.7,
+    LifeL1toL2 = 43,
+    ReturnSpeedL = 30.6,
+    TransitionLtoR = 30.6,
+    SpeedToR1 = 57.5,
+    RightR1toR2 = 30.6,
+    ReturnSpeedR = 30.6,
+    TransitionRtoL = 30.6,
+    AimbotSpeed = 56,
+    AimbotRadius = 120,
+    SpinSpeed = 10,
+    IJF = 40,
+    IJC = 50,
+    GalaxyGravity = 80,
+    GalaxyGravityPercent = 70,
+    HOP_POWER = 30,
+    HOP_COOLDOWN = 0.09,
+    L1 = Vector3.new(-475.58, -5.40, 93.80),
+    L2 = Vector3.new(-484.15, -4.42, 95.80),
+    R1 = Vector3.new(-475.16, -6.52, 27.70),
+    R2 = Vector3.new(-484.04, -5.09, 25.15),
+    DEFAULT_GRAVITY = 196.2,
+    FloatHeight = 8,
+    DodgeHeight = 1,
+    HitboxSize = 8,
+    -- إحداثيات TP
+    TpCheckA   = Vector3.new(-472.60, -7.00, 57.52),
+    TpCheckLeft = Vector3.new(-472.65, -7.00, 95.69),
+    TpCheckRight = Vector3.new(-471.76, -7.00, 26.22),
+    TpFinalLeft = Vector3.new(-483.59, -5.04, 104.24),
+    TpFinalRight = Vector3.new(-483.51, -5.10, 18.89),
+}
+
+-- قائمة أدوات الضرب
+local SlapList = {
+    {1,"Bat"},{2,"Slap"},{3,"Iron Slap"},{4,"Gold Slap"},{5,"Diamond Slap"},
+    {6,"Emerald Slap"},{7,"Ruby Slap"},{8,"Dark Matter Slap"},{9,"Flame Slap"},
+    {10,"Nuclear Slap"},{11,"Galaxy Slap"},{12,"Glitched Slap"}
+}
+
+-- ================= إعدادات Auto steal =================
+-- ... (الكود كما هو، لم يتم تغييره) ...
+local isStealing = false
+local stealStartTime = nil
+local progressConnection = nil
+local StealData = {}
+local ProgressBarFill, ProgressLabel, ProgressPercentLabel
+
+local function isMyPlotByName(pn)
+    local plots = Workspace:FindFirstChild("Plots")
+    if not plots then return false end
+    local plot = plots:FindFirstChild(pn)
+    if not plot then return false end
+    local sign = plot:FindFirstChild("PlotSign")
+    if sign then
+        local yb = sign:FindFirstChild("YourBase")
+        if yb and yb:IsA("BillboardGui") then
+            return yb.Enabled == true
+        end
+    end
+    return false
+end
+
+local function findNearestPrompt()
+    local h = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if not h then return nil end
+    local plots = Workspace:FindFirstChild("Plots")
+    if not plots then return nil end
+    local np, nd, nn = nil, math.huge, nil
+    for _, plot in ipairs(plots:GetChildren()) do
+        if isMyPlotByName(plot.Name) then continue end
+        local podiums = plot:FindFirstChild("AnimalPodiums")
+        if not podiums then continue end
+        for _, pod in ipairs(podiums:GetChildren()) do
+            pcall(function()
+                local base = pod:FindFirstChild("Base")
+                local spawn = base and base:FindFirstChild("Spawn")
+                if spawn then
+                    local dist = (spawn.Position - h.Position).Magnitude
+                    if dist < nd and dist <= Values.STEAL_RADIUS then
+                        local att = spawn:FindFirstChild("PromptAttachment")
+                        if att then
+                            for _, ch in ipairs(att:GetChildren()) do
+                                if ch:IsA("ProximityPrompt") then
+                                    np, nd, nn = ch, dist, pod.Name
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+    return np, nd, nn
+end
+
+local function ResetProgressBar()
+    if ProgressLabel then ProgressLabel.Text = "READY" end
+    if ProgressPercentLabel then ProgressPercentLabel.Text = "" end
+    if ProgressBarFill then ProgressBarFill.Size = UDim2.new(0, 0, 1, 0) end
+end
+
+local function executeSteal(prompt, name)
+    if isStealing then return end
+    if not StealData[prompt] then
+        StealData[prompt] = {hold = {}, trigger = {}, ready = true}
+        pcall(function()
+            if getconnections then
+                for _, c in ipairs(getconnections(prompt.PromptButtonHoldBegan)) do
+                    if c.Function then table.insert(StealData[prompt].hold, c.Function) end
+                end
+                for _, c in ipairs(getconnections(prompt.Triggered)) do
+                    if c.Function then table.insert(StealData[prompt].trigger, c.Function) end
+                end
+            end
+        end)
+    end
+    local data = StealData[prompt]
+    if not data.ready then return end
+    data.ready = false
+    isStealing = true
+    stealStartTime = tick()
+    if ProgressLabel then ProgressLabel.Text = name or "STEALING..." end
+    if progressConnection then progressConnection:Disconnect() end
+    progressConnection = RunService.Heartbeat:Connect(function()
+        if not isStealing then progressConnection:Disconnect() return end
+        local prog = math.clamp((tick() - stealStartTime) / Values.STEAL_DURATION, 0, 1)
+        if ProgressBarFill then ProgressBarFill.Size = UDim2.new(prog, 0, 1, 0) end
+        if ProgressPercentLabel then
+            local percent = math.floor(prog * 100)
+            ProgressPercentLabel.Text = percent .. "%"
+        end
+    end)
+    task.spawn(function()
+        for _, f in ipairs(data.hold) do task.spawn(f) end
+        task.wait(Values.STEAL_DURATION)
+        for _, f in ipairs(data.trigger) do task.spawn(f) end
+        if progressConnection then progressConnection:Disconnect() end
+        ResetProgressBar()
+        data.ready = true
+        isStealing = false
+    end)
+end
+
+local stealLoopConnection = nil
+
+local function startAutoSteal()
+    if stealLoopConnection then return end
+    stealLoopConnection = RunService.Heartbeat:Connect(function()
+        if not Enabled.AutoSteal or isStealing then return end
+        local p, _, n = findNearestPrompt()
+        if p then executeSteal(p, n) end
+    end)
+end
+
+local function stopAutoSteal()
+    if stealLoopConnection then stealLoopConnection:Disconnect(); stealLoopConnection = nil end
+    isStealing = false
+    ResetProgressBar()
+end
+
+-- ================= PLAYER =================
+local HRP, Humanoid
+
+local function updateCharacter()
+    local char = Player.Character
+    if char then
+        HRP = char:FindFirstChild("HumanoidRootPart")
+        Humanoid = char:FindFirstChildOfClass("Humanoid")
+    end
+end
+updateCharacter()
+Player.CharacterAdded:Connect(updateCharacter)
+
+-- ================= STATE للمسارات =================
+local lifeState = 0
+local rightState = 0
+local autoStealActiveForPaths = false
+local galaxyActive = false
+local spaceHeld = false
+local lastVel = Vector3.new()
+local waitAtTarget = false
+local waitStartTime = 0
+local WAIT_DURATION = 0.1
+local waitingForSteal = false
+
+local LifeTargets = {Values.L1, Values.L2, Values.L1, Values.R1, Values.R2, Values.R1}
+local RightTargets = {Values.R1, Values.R2, Values.R1, Values.L1, Values.L2, Values.L1}
+
+-- ================= متغيرات الاتصالات =================
+local Connections = {}
+local spinBAV = nil
+local unwalkConn = nil
+local galaxyBV = nil
+local floatConn = nil
+local dodgeConn = nil
+local espConns = {}
+local speedBB = nil
+local extraSpeedConnection = nil
+local batTPConnection = nil
+local hitboxExpanderConn = nil
+local originalHRPSizes = {}
+
+-- ================= دوال Aimbot المتطورة =================
+local function findBat()
+    local c = Player.Character; if not c then return nil end
+    local bp = Player:FindFirstChildOfClass("Backpack")
+    for _, ch in ipairs(c:GetChildren()) do
+        if ch:IsA("Tool") and ch.Name:lower():find("bat") then return ch end
+    end
+    if bp then
+        for _, ch in ipairs(bp:GetChildren()) do
+            if ch:IsA("Tool") and ch.Name:lower():find("bat") then return ch end
+        end
+    end
+    for _, i in ipairs(SlapList) do
+        local t = c:FindFirstChild(i[2]) or (bp and bp:FindFirstChild(i[2]))
+        if t then return t end
+    end
+end
+
+local function findNearestEnemy(myHRP)
+    local nearest, nearestDist, nearestTorso = nil, math.huge, nil
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= Player and p.Character then
+            local targetHrp = p.Character:FindFirstChild("HumanoidRootPart")
+            local torso = p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso")
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if targetHrp and hum and hum.Health > 0 then
+                local d = (targetHrp.Position - myHRP.Position).Magnitude
+                if d < Values.AimbotRadius and d < nearestDist then
+                    nearestDist = d
+                    nearest = targetHrp
+                    nearestTorso = torso or targetHrp
+                end
+            end
+        end
+    end
+    return nearest, nearestDist, nearestTorso
+end
+
+local function startAimbot()
+    if Connections.aimbot then return end
+    Connections.aimbot = RunService.Heartbeat:Connect(function()
+        if not Enabled.Aimbot then return end
+        local c = Player.Character
+        if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart")
+        local hum = c:FindFirstChildOfClass("Humanoid")
+        if not h or not hum then return end
+
+        local bat = findBat()
+        if bat and bat.Parent ~= c then
+            hum:EquipTool(bat)
+        end
+
+        local target, _, torso = findNearestEnemy(h)
+        if target and torso then
+            local PredictedPos = torso.Position + (torso.AssemblyLinearVelocity * 0.13)
+            local dir = PredictedPos - h.Position
+            if Vector3.new(dir.X, 0, dir.Z).Magnitude > 0 then
+                hum.AutoRotate = true
+            end
+            if dir.Magnitude > 1.5 then
+                h.AssemblyLinearVelocity = dir.Unit * Values.AimbotSpeed
+            else
+                h.AssemblyLinearVelocity = target.AssemblyLinearVelocity
+            end
+        end
+    end)
+end
+
+local function stopAimbot()
+    if Connections.aimbot then Connections.aimbot:Disconnect(); Connections.aimbot = nil end
+end
+
+-- ================= دوال TP =================
+local ragdollDetectorConn = nil
+local lastTpSide = "none"
+local ragdollWasActive = false
+
+local function tpMove(pos)
+    local char = Player.Character; if not char then return end
+    char:PivotTo(CFrame.new(pos))
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.AssemblyLinearVelocity = Vector3.new(0,0,0) end
+end
+
+-- دوال النقل المباشر
+local function doTPRight()
+    tpMove(Values.TpCheckA); task.wait(0.1)
+    tpMove(Values.TpCheckRight); task.wait(0.1)
+    tpMove(Values.TpFinalRight)
+    lastTpSide = "right"
+end
+
+local function doTPL2()
+    tpMove(Values.TpCheckA); task.wait(0.1)
+    tpMove(Values.TpCheckLeft); task.wait(0.1)
+    tpMove(Values.L2) -- النقل المباشر إلى L2
+    lastTpSide = "l2"
+end
+
+-- دالة مراقبة الرجدول (معدلة)
+local function startRagdollDetector()
+    if ragdollDetectorConn then ragdollDetectorConn:Disconnect() end
+    ragdollDetectorConn = RunService.Heartbeat:Connect(function()
+        -- نتحقق إذا كان أي من زر TP مفعلًا
+        if not Enabled.AutoTPRight and not Enabled.AutoTPL2 then return end
+        local char = Player.Character; if not char then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        local state = hum:GetState()
+        local nowRagdolled = (state == Enum.HumanoidStateType.Physics or state == Enum.HumanoidStateType.Ragdoll or state == Enum.HumanoidStateType.FallingDown)
+        
+        if nowRagdolled and not ragdollWasActive then
+            ragdollWasActive = true
+            task.spawn(function()
+                task.wait(0.15)
+                -- ننفذ الإجراء بناءً على آخر زر تم تفعيله
+                if lastTpSide == "right" and Enabled.AutoTPRight then
+                    doTPRight()
+                    task.wait(0.2)
+                    if Enabled.Right then
+                        autoStealActiveForPaths = true
+                        rightState = 0; lifeState = 0
+                        waitAtTarget = false
+                    end
+                elseif lastTpSide == "l2" and Enabled.AutoTPL2 then
+                    doTPL2()
+                    task.wait(0.2)
+                    if Enabled.Life then
+                        autoStealActiveForPaths = true
+                        lifeState = 0; rightState = 0
+                        waitAtTarget = false
+                    end
+                end
+            end)
+        elseif not nowRagdolled then
+            ragdollWasActive = false
+        end
+    end)
+end
+
+local function stopRagdollDetector()
+    if ragdollDetectorConn then ragdollDetectorConn:Disconnect(); ragdollDetectorConn = nil end
+    ragdollWasActive = false
+end
+
+-- ================= ADVANCED ANTI RAGDOLL =================
+local antiRagdollMode = nil
+local antiRagdollConnections = {}
+local antiRagdollCachedData = {}
+
+local function cacheCharacterData()
+    local char = Player.Character
+    if not char then return false end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not hum or not root then return false end
+    antiRagdollCachedData = {
+        character = char,
+        humanoid = hum,
+        root = root,
+        originalWalkSpeed = hum.WalkSpeed,
+        originalJumpPower = hum.JumpPower,
+        isFrozen = false
+    }
+    return true
+end
+
+local function disconnectAllAntiRagdoll()
+    for _, conn in ipairs(antiRagdollConnections) do
+        if typeof(conn) == "RBXScriptConnection" then
+            pcall(function() conn:Disconnect() end)
+        end
+    end
+    antiRagdollConnections = {}
+end
+
+local function isRagdolledAdvanced()
+    if not antiRagdollCachedData.humanoid then return false end
+    local hum = antiRagdollCachedData.humanoid
+    local state = hum:GetState()
+    if state == Enum.HumanoidStateType.Physics or state == Enum.HumanoidStateType.Ragdoll or state == Enum.HumanoidStateType.FallingDown then
+        return true
+    end
+    local endTime = Player:GetAttribute("RagdollEndTime")
+    if endTime then
+        local now = workspace:GetServerTimeNow()
+        if (endTime - now) > 0 then
+            return true
+        end
+    end
+    return false
+end
+
+local function removeRagdollConstraints()
+    if not antiRagdollCachedData.character then return end
+    for _, descendant in ipairs(antiRagdollCachedData.character:GetDescendants()) do
+        if descendant:IsA("BallSocketConstraint") or (descendant:IsA("Attachment") and descendant.Name:find("RagdollAttachment")) then
+            pcall(function() descendant:Destroy() end)
+        end
+    end
+end
+
+local function forceExitRagdollAdvanced()
+    if not antiRagdollCachedData.humanoid or not antiRagdollCachedData.root then return end
+    local hum = antiRagdollCachedData.humanoid
+    local root = antiRagdollCachedData.root
+    
+    pcall(function()
+        local now = workspace:GetServerTimeNow()
+        Player:SetAttribute("RagdollEndTime", now)
+    end)
+    
+    if hum.Health > 0 then
+        hum:ChangeState(Enum.HumanoidStateType.Running)
+    end
+    root.Anchored = false
+    root.AssemblyLinearVelocity = Vector3.zero
+    root.AssemblyAngularVelocity = Vector3.zero
+end
+
+local function antiRagdollLoop()
+    while antiRagdollMode do
+        task.wait()
+        if isRagdolledAdvanced() then
+            removeRagdollConstraints()
+            forceExitRagdollAdvanced()
+        end
+        local cam = workspace.CurrentCamera
+        if cam and antiRagdollCachedData.humanoid then
+            if cam.CameraSubject ~= antiRagdollCachedData.humanoid then
+                cam.CameraSubject = antiRagdollCachedData.humanoid
+            end
+        end
+    end
+end
+
+local function startAdvancedAntiRagdoll()
+    if antiRagdollMode then return end
+    disconnectAllAntiRagdoll()
+    if not cacheCharacterData() then return end
+    antiRagdollMode = "v2"
+    local charConn = Player.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        if antiRagdollMode then
+            cacheCharacterData()
+        end
+    end)
+    table.insert(antiRagdollConnections, charConn)
+    task.spawn(antiRagdollLoop)
+end
+
+local function stopAdvancedAntiRagdoll()
+    antiRagdollMode = nil
+    disconnectAllAntiRagdoll()
+    antiRagdollCachedData = {}
+end
+
+-- ================= SpinBot =================
+local function killSpin()
+    if spinBAV then spinBAV:Destroy(); spinBAV = nil end
+    local c = Player.Character
+    if c then
+        local root = c:FindFirstChild("HumanoidRootPart")
+        if root then
+            for _, v in pairs(root:GetChildren()) do
+                if v.Name == "EgoSpinBAV" and v:IsA("BodyAngularVelocity") then v:Destroy() end
+            end
+        end
+    end
+end
+
+local function startSpin()
+    killSpin()
+    local c = Player.Character; if not c then return end
+    local root = c:FindFirstChild("HumanoidRootPart"); if not root then return end
+    spinBAV = Instance.new("BodyAngularVelocity")
+    spinBAV.Name = "EgoSpinBAV"
+    spinBAV.MaxTorque = Vector3.new(0, math.huge, 0)
+    spinBAV.AngularVelocity = Vector3.new(0, Values.SpinSpeed, 0)
+    spinBAV.Parent = root
+end
+
+-- ================= JumpBoost =================
+RunService.Heartbeat:Connect(function()
+    if not Enabled.JumpBoost then return end
+    local c = Player.Character; if not c then return end
+    local hum = c:FindFirstChildOfClass("Humanoid"); if not hum then return end
+    hum.UseJumpPower = true
+    hum.JumpPower = Values.JumpPower
+    local hrp = c:FindFirstChild("HumanoidRootPart")
+    if hrp and hrp.AssemblyLinearVelocity.Y < 0 then
+        local vy = hrp.AssemblyLinearVelocity.Y
+        hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, vy + (-8 - vy) * 0.18, hrp.AssemblyLinearVelocity.Z)
+    end
+end)
+
+-- ================= Infinite Jump =================
+local function onJumpRequest()
+    if not Enabled.SpeedBoost then return end
+    local c = Player.Character; if not c then return end
+    local hrp = c:FindFirstChild("HumanoidRootPart"); if not hrp then return end
+    hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, Values.IJF, hrp.AssemblyLinearVelocity.Z)
+end
+UserInputService.JumpRequest:Connect(onJumpRequest)
+
+-- ================= Float =================
+local function startFloat()
+    if floatConn then floatConn:Disconnect() end
+    local c = Player.Character
+    if c and HRP then
+        HRP.CFrame = CFrame.new(HRP.Position.X, HRP.Position.Y + Values.FloatHeight, HRP.Position.Z)
+        HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+    end
+    floatConn = RunService.Heartbeat:Connect(function()
+        if not Enabled.Float then floatConn:Disconnect(); floatConn = nil; return end
+        local c = Player.Character; if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart")
+        if h then h.AssemblyLinearVelocity = Vector3.new(h.AssemblyLinearVelocity.X, 0, h.AssemblyLinearVelocity.Z) end
+    end)
+end
+
+local function stopFloat()
+    if floatConn then floatConn:Disconnect(); floatConn = nil end
+end
+
+-- ================= Dodge =================
+local function startDodge()
+    if dodgeConn then dodgeConn:Disconnect() end
+    local c = Player.Character
+    if c and HRP then
+        HRP.CFrame = CFrame.new(HRP.Position.X, HRP.Position.Y + Values.DodgeHeight, HRP.Position.Z)
+        HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+    end
+    dodgeConn = RunService.Heartbeat:Connect(function()
+        if not Enabled.Dodge then dodgeConn:Disconnect(); dodgeConn = nil; return end
+        local c = Player.Character; if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart")
+        if h then h.AssemblyLinearVelocity = Vector3.new(h.AssemblyLinearVelocity.X, 0, h.AssemblyLinearVelocity.Z) end
+    end)
+end
+
+local function stopDodge()
+    if dodgeConn then dodgeConn:Disconnect(); dodgeConn = nil end
+end
+
+-- ================= Galaxy =================
+local function startGalaxy()
+    if galaxyActive then return end
+    galaxyActive = true
+end
+
+local function stopGalaxy()
+    galaxyActive = false
+end
+
+-- ================= Unwalk =================
+local function enableUnwalk()
+    local c = Player.Character; if not c then return end
+    local hum = c:FindFirstChildOfClass("Humanoid"); if not hum then return end
+    local anim = hum:FindFirstChildOfClass("Animator"); if not anim then return end
+    for _, t in ipairs(anim:GetPlayingAnimationTracks()) do t:Stop(0) end
+    if unwalkConn then unwalkConn:Disconnect() end
+    unwalkConn = RunService.Heartbeat:Connect(function()
+        if not Enabled.Unwalk then unwalkConn:Disconnect(); unwalkConn = nil; return end
+        local c = Player.Character; if not c then return end
+        local hum = c:FindFirstChildOfClass("Humanoid"); if not hum then return end
+        local anim = hum:FindFirstChildOfClass("Animator"); if not anim then return end
+        for _, t in ipairs(anim:GetPlayingAnimationTracks()) do t:Stop(0) end
+    end)
+end
+
+-- ================= Extra Speed =================
+local function startExtraSpeed()
+    if extraSpeedConnection then return end
+    extraSpeedConnection = RunService.Heartbeat:Connect(function()
+        if not Enabled.ExtraSpeed then
+            extraSpeedConnection:Disconnect(); extraSpeedConnection = nil
+            return
+        end
+        if HRP and Humanoid then
+            local moveDir = Humanoid.MoveDirection
+            if moveDir.Magnitude > 0 then
+                HRP.AssemblyLinearVelocity = Vector3.new(moveDir.X * Values.ExtraSpeedValue, HRP.AssemblyLinearVelocity.Y, moveDir.Z * Values.ExtraSpeedValue)
+            end
+        end
+    end)
+end
+
+local function stopExtraSpeed()
+    if extraSpeedConnection then extraSpeedConnection:Disconnect(); extraSpeedConnection = nil end
+end
+
+-- ================= Bat TP =================
+local function startBatTP()
+    if batTPConnection then return end
+    batTPConnection = UserInputService.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if not Enabled.BatTP then return end
+        if input.KeyCode == Enum.KeyCode.T then
+            local char = Player.Character
+            if char then
+                local bat = char:FindFirstChild("Bat")
+                if bat then
+                    local hrp = char:FindFirstChild("HumanoidRootPart")
+                    if hrp then hrp.CFrame = bat:GetPivot() end
+                end
+            end
+        end
+    end)
+end
+
+local function stopBatTP()
+    if batTPConnection then batTPConnection:Disconnect(); batTPConnection = nil end
+end
+
+-- ================= Hitbox Expander =================
+local function expandHitbox(character)
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        if not originalHRPSizes[hrp] then originalHRPSizes[hrp] = hrp.Size end
+        hrp.Size = Vector3.new(Values.HitboxSize, Values.HitboxSize, Values.HitboxSize)
+    end
+end
+
+local function restoreHitbox(character)
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if hrp and originalHRPSizes[hrp] then
+        hrp.Size = originalHRPSizes[hrp]
+        originalHRPSizes[hrp] = nil
+    end
+end
+
+local function startHitboxExpander()
+    if not Enabled.HitboxExpander then return end
+    local char = Player.Character
+    if char then expandHitbox(char) end
+end
+
+local function stopHitboxExpander()
+    local char = Player.Character
+    if char then restoreHitbox(char) end
+end
+
+-- ================= ESP الأساسي =================
+local function makeESP(plr)
+    if plr == Player or not plr.Character then return end
+    local char = plr.Character
+    if char:FindFirstChild("EgoESP_Box") then char.EgoESP_Box:Destroy() end
+    if char:FindFirstChild("EgoESP_Name") then char.EgoESP_Name:Destroy() end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local head = char:FindFirstChild("Head")
+    if not (hrp and head) then return end
+    local box = Instance.new("BoxHandleAdornment")
+    box.Name = "EgoESP_Box"
+    box.Adornee = hrp
+    box.Size = Vector3.new(4, 6, 2)
+    box.Color3 = Color3.fromRGB(60, 135, 255)
+    box.Transparency = 0.6
+    box.ZIndex = 10
+    box.AlwaysOnTop = true
+    box.Parent = char
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "EgoESP_Name"
+    bb.Adornee = head
+    bb.Size = UDim2.new(0, 200, 0, 50)
+    bb.StudsOffset = Vector3.new(0, 3, 0)
+    bb.AlwaysOnTop = true
+    bb.Parent = char
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1,0,1,0); lbl.BackgroundTransparency = 1
+    lbl.Text = plr.DisplayName or plr.Name
+    lbl.TextColor3 = Color3.fromRGB(108, 175, 255)
+    lbl.Font = Enum.Font.Arcade; lbl.TextScaled = true
+    lbl.TextStrokeTransparency = 0.7; lbl.TextStrokeColor3 = Color3.new(0,0,0)
+    lbl.Parent = bb
+end
+
+local function removeESP(plr)
+    if not plr.Character then return end
+    local b = plr.Character:FindFirstChild("EgoESP_Box")
+    local n = plr.Character:FindFirstChild("EgoESP_Name")
+    if b then b:Destroy() end
+    if n then n:Destroy() end
+end
+
+local function enableESP()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= Player then
+            if plr.Character then makeESP(plr) end
+            table.insert(espConns, plr.CharacterAdded:Connect(function()
+                task.wait(0.1); if Enabled.ESP then makeESP(plr) end
+            end))
+        end
+    end
+    table.insert(espConns, Players.PlayerAdded:Connect(function(plr)
+        if plr == Player then return end
+        table.insert(espConns, plr.CharacterAdded:Connect(function()
+            task.wait(0.1); if Enabled.ESP then makeESP(plr) end
+        end))
+    end))
+end
+
+local function disableESP()
+    for _, plr in ipairs(Players:GetPlayers()) do removeESP(plr) end
+    for _, c in ipairs(espConns) do if c and c.Connected then c:Disconnect() end end
+    espConns = {}
+end
+
+-- ================= Speed Billboard =================
+local function makeSpeedBB()
+    local char = Player.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    if speedBB then speedBB:Destroy() end
+    speedBB = Instance.new("BillboardGui")
+    speedBB.Name = "EgoSpeedBB"
+    speedBB.Adornee = hrp
+    speedBB.Size = UDim2.new(0, 120, 0, 36)
+    speedBB.StudsOffset = Vector3.new(0, 4.5, 0)
+    speedBB.AlwaysOnTop = true
+    speedBB.Parent = hrp
+    local lbl = Instance.new("TextLabel")
+    lbl.Name = "SpeedLbl"
+    lbl.Size = UDim2.new(1, 0, 1, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.TextColor3 = Color3.new(1, 1, 1)
+    lbl.TextStrokeColor3 = Color3.new(0, 0, 0)
+    lbl.TextStrokeTransparency = 0
+    lbl.Font = Enum.Font.Fantasy
+    lbl.TextScaled = true
+    lbl.Text = "Speed: 0"
+    lbl.Parent = speedBB
+end
+
+RunService.Heartbeat:Connect(function()
+    local char = Player.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    if not speedBB or not speedBB.Parent then makeSpeedBB() end
+    local lbl = speedBB and speedBB:FindFirstChild("SpeedLbl")
+    if not lbl then return end
+    local vel = hrp.AssemblyLinearVelocity
+    lbl.Text = "Speed: " .. math.floor(Vector3.new(vel.X, 0, vel.Z).Magnitude)
+end)
+
+-- ================= MAIN LOOP =================
+RunService.Heartbeat:Connect(function()
+    if not HRP then return end
+
+    if Enabled.SpeedBoost then
+        if Humanoid and Humanoid.MoveDirection.Magnitude > 0 then
+            local moveDir = Humanoid.MoveDirection * Values.BoostSpeed
+            HRP.AssemblyLinearVelocity = Vector3.new(moveDir.X, HRP.AssemblyLinearVelocity.Y, moveDir.Z)
+        end
+        if HRP.AssemblyLinearVelocity.Y < -Values.IJC then
+            HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, -Values.IJC, HRP.AssemblyLinearVelocity.Z)
+        end
+    end
+
+    if Enabled.Life and autoStealActiveForPaths then
+        if waitAtTarget then
+            if tick() - waitStartTime >= WAIT_DURATION then
+                waitAtTarget = false
+                lifeState = (lifeState + 1) % 6
+                if lifeState == 1 or lifeState == 4 then waitingForSteal = true end
+            else
+                HRP.AssemblyLinearVelocity = Vector3.new(0, HRP.AssemblyLinearVelocity.Y, 0)
+                return
+            end
+        end
+
+        local target = LifeTargets[lifeState+1]
+        if target then
+            local dir = target - HRP.Position
+            if dir.Magnitude > 2 then
+                local speed = (lifeState == 0 and Values.SpeedToL1) or
+                              (lifeState == 1 and Values.LifeL1toL2) or
+                              (lifeState == 2 and Values.ReturnSpeedL) or
+                              (lifeState == 3 and Values.TransitionLtoR) or
+                              (lifeState == 4 and Values.RightR1toR2) or
+                              (lifeState == 5 and Values.ReturnSpeedR)
+                HRP.AssemblyLinearVelocity = Vector3.new(dir.Unit.X * speed, HRP.AssemblyLinearVelocity.Y, dir.Unit.Z * speed)
+            else
+                HRP.AssemblyLinearVelocity = Vector3.new(0, HRP.AssemblyLinearVelocity.Y, 0)
+                if lifeState == 1 or lifeState == 4 then
+                    waitAtTarget = true
+                    waitStartTime = tick()
+                else
+                    lifeState = (lifeState + 1) % 6
+                    if lifeState == 1 or lifeState == 4 then waitingForSteal = true end
+                end
+            end
+        end
+    end
+
+    if Enabled.Right and autoStealActiveForPaths then
+        if waitAtTarget then
+            if tick() - waitStartTime >= WAIT_DURATION then
+                waitAtTarget = false
+                rightState = (rightState + 1) % 6
+                if rightState == 1 or rightState == 4 then waitingForSteal = true end
+            else
+                HRP.AssemblyLinearVelocity = Vector3.new(0, HRP.AssemblyLinearVelocity.Y, 0)
+                return
+            end
+        end
+
+        local target = RightTargets[rightState+1]
+        if target then
+            local dir = target - HRP.Position
+            if dir.Magnitude > 2 then
+                local speed = (rightState == 0 and Values.SpeedToR1) or
+                              (rightState == 1 and Values.RightR1toR2) or
+                              (rightState == 2 and Values.ReturnSpeedR) or
+                              (rightState == 3 and Values.TransitionRtoL) or
+                              (rightState == 4 and Values.LifeL1toL2) or
+                              (rightState == 5 and Values.ReturnSpeedL)
+                HRP.AssemblyLinearVelocity = Vector3.new(dir.Unit.X * speed, HRP.AssemblyLinearVelocity.Y, dir.Unit.Z * speed)
+            else
+                HRP.AssemblyLinearVelocity = Vector3.new(0, HRP.AssemblyLinearVelocity.Y, 0)
+                if rightState == 1 or rightState == 4 then
+                    waitAtTarget = true
+                    waitStartTime = tick()
+                else
+                    rightState = (rightState + 1) % 6
+                    if rightState == 1 or rightState == 4 then waitingForSteal = true end
+                end
+            end
+        end
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.Space then spaceHeld = true end
+end)
+UserInputService.InputEnded:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.Space then spaceHeld = false end
+end)
+
+-- ================= دالة الإيقاف الطارئ =================
+local function stopAll()
+    Enabled.Life = false; Enabled.Right = false; Enabled.Aimbot = false; Enabled.SpeedBoost = false
+    Enabled.AutoSteal = false; Enabled.JumpBoost = false; Enabled.SpinBot = false; Enabled.AntiRagdoll = false
+    Enabled.Unwalk = false; Enabled.Galaxy = false; Enabled.Float = false; Enabled.Dodge = false
+    Enabled.ESP = true; Enabled.ExtraSpeed = false; Enabled.BatTP = false; Enabled.HitboxExpander = false
+    Enabled.AutoTPRight = false; Enabled.AutoTPL2 = false
+
+    stopAimbot(); killSpin()
+    if unwalkConn then unwalkConn:Disconnect(); unwalkConn = nil end
+    if galaxyActive then stopGalaxy() end
+    stopFloat(); stopDodge(); stopExtraSpeed(); stopBatTP(); stopHitboxExpander()
+    stopAutoSteal()
+    stopRagdollDetector()
+    stopAdvancedAntiRagdoll()
+    Workspace.Gravity = Values.DEFAULT_GRAVITY
+
+    autoStealActiveForPaths = false; waitingForSteal = false; lifeState = 0; rightState = 0; waitAtTarget = false
+
+    if HRP then HRP.AssemblyLinearVelocity = Vector3.zero end
+end
+
+-- ================= UI =================
+local gui = Instance.new("ScreenGui", Player:WaitForChild("PlayerGui"))
+gui.Name = "NineHub_Duels"
+gui.ResetOnSpawn = false
+gui.Enabled = true
+
+-- دالة لإنشاء زر أساسي (للـ open و stop)
+local function createBasicButton(text, pos, onClick, isTpButton)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 60, 0, 60)
+    btn.Position = pos
+    btn.Text = ""
+    btn.BackgroundColor3 = THEME.row
+    btn.BorderSizePixel = 0
+    btn.Draggable = true
+    btn.Parent = gui
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 14)
+
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Thickness = 2
+    stroke.Color = isTpButton and THEME.accent or THEME.primary
+    local gradient = Instance.new("UIGradient", stroke)
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, isTpButton and THEME.accent or THEME.primary),
+        ColorSequenceKeypoint.new(0.5, isTpButton and THEME.accent or THEME.secondary),
+        ColorSequenceKeypoint.new(1, isTpButton and THEME.accent or THEME.primary)
+    })
+    gradient.Rotation = 0
+    task.spawn(function()
+        while true do
+            for i = 0, 36 do
+                gradient.Rotation = i * 10
+                task.wait(0.05)
+            end
+        end
+    end)
+
+    for i = 1, 3 do
+        local spark = Instance.new("Frame")
+        spark.Size = UDim2.new(0, math.random(2,4), 0, math.random(2,4))
+        spark.Position = UDim2.new(math.random(), 0, math.random(), 0)
+        spark.BackgroundColor3 = THEME.accent
+        spark.BorderSizePixel = 0
+        spark.Parent = btn
+        Instance.new("UICorner", spark).CornerRadius = UDim.new(1,0)
+        task.spawn(function()
+            while true do
+                local tween = TweenService:Create(spark, TweenInfo.new(math.random(1,2), Enum.EasingStyle.Linear), {
+                    Position = UDim2.new(math.random(), 0, math.random(), 0)
+                })
+                tween:Play()
+                tween.Completed:Wait()
+            end
+        end)
+    end
+
+    local tx = Instance.new("TextLabel", btn)
+    tx.Size = UDim2.new(1, 0, 1, 0)
+    tx.BackgroundTransparency = 1
+    tx.Text = text
+    tx.TextColor3 = THEME.text
+    tx.Font = Enum.Font.GothamBold
+    tx.TextSize = 12
+
+    btn.MouseButton1Click:Connect(onClick)
+    return btn
+end
+
+-- دالة لإنشاء زر تبديل (Toggle)
+local function createToggleButton(text, pos, onChange)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 60, 0, 60)
+    btn.Position = pos
+    btn.Text = ""
+    btn.BackgroundColor3 = THEME.row
+    btn.BorderSizePixel = 0
+    btn.Parent = gui
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 14)
+
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Thickness = 2
+    stroke.Color = THEME.primary
+    local gradient = Instance.new("UIGradient", stroke)
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, THEME.primary),
+        ColorSequenceKeypoint.new(0.5, THEME.secondary),
+        ColorSequenceKeypoint.new(1, THEME.primary)
+    })
+    gradient.Rotation = 0
+    task.spawn(function()
+        while true do
+            for i = 0, 36 do
+                gradient.Rotation = i * 10
+                task.wait(0.05)
+            end
+        end
+    end)
+
+    for i = 1, 3 do
+        local spark = Instance.new("Frame")
+        spark.Size = UDim2.new(0, math.random(2,4), 0, math.random(2,4))
+        spark.Position = UDim2.new(math.random(), 0, math.random(), 0)
+        spark.BackgroundColor3 = THEME.accent
+        spark.BorderSizePixel = 0
+        spark.Parent = btn
+        Instance.new("UICorner", spark).CornerRadius = UDim.new(1,0)
+        task.spawn(function()
+            while true do
+                local tween = TweenService:Create(spark, TweenInfo.new(math.random(1,2), Enum.EasingStyle.Linear), {
+                    Position = UDim2.new(math.random(), 0, math.random(), 0)
+                })
+                tween:Play()
+                tween.Completed:Wait()
+            end
+        end)
+    end
+
+    local tx = Instance.new("TextLabel", btn)
+    tx.Size = UDim2.new(1, 0, 1, 0)
+    tx.BackgroundTransparency = 1
+    tx.Text = text
+    tx.TextColor3 = THEME.text
+    tx.Font = Enum.Font.GothamBold
+    tx.TextSize = 12
+
+    local active = false
+    btn.MouseButton1Click:Connect(function()
+        active = not active
+        btn.BackgroundColor3 = active and THEME.primary or THEME.row
+        onChange(active)
+    end)
+    return btn
+end
+
+-- مواقع الأزرار
+local topY = 20
+local baseY = 20
+local spacing = 70
+
+-- زر STOP (يسار)
+local stopBtn = createBasicButton("STOP", UDim2.new(0.5, -95, 0, topY), stopAll, false)
+
+-- زر TP (وسط) - هذا الزر سيبقى كما هو، سيكون زر نقل فوري (ليس تبديل) إذا أردت. لكننا سننقله للقائمة. سأتركه زر "TP" سريع.
+-- يمكنك إزالته أو تركه. سأتركه كزر نقل سريع إلى L2.
+local tpQuickBtn = createBasicButton("TP", UDim2.new(0.5, -30, 0, topY), function()
+    doTPL2() -- نقل سريع إلى L2
+end, true)
+
+-- زر OPEN (يمين)
+local openBtn = createBasicButton("OPEN", UDim2.new(0.5, 35, 0, topY), function() extraFrame.Visible = not extraFrame.Visible end, false)
+
+-- ================= إنشاء شريط التقدم للسرقة =================
+local progressBar = Instance.new("Frame", gui)
+progressBar.Size = UDim2.new(0, 300, 0, 40)
+progressBar.Position = UDim2.new(0.5, -150, 1, -120)
+progressBar.BackgroundColor3 = THEME.bg
+progressBar.BorderSizePixel = 0
+progressBar.ClipsDescendants = true
+progressBar.Visible = false
+Instance.new("UICorner", progressBar).CornerRadius = UDim.new(0, 10)
+
+local pStroke = Instance.new("UIStroke", progressBar)
+pStroke.Thickness = 1.5
+pStroke.Color = THEME.primary
+
+ProgressLabel = Instance.new("TextLabel", progressBar)
+ProgressLabel.Size = UDim2.new(0.35, 0, 0.5, 0)
+ProgressLabel.Position = UDim2.new(0, 5, 0, 0)
+ProgressLabel.BackgroundTransparency = 1
+ProgressLabel.Text = "READY"
+ProgressLabel.TextColor3 = THEME.text
+ProgressLabel.Font = Enum.Font.GothamBold
+ProgressLabel.TextSize = 7
+ProgressLabel.TextXAlignment = Enum.TextXAlignment.Left
+ProgressLabel.ZIndex = 3
+
+ProgressPercentLabel = Instance.new("TextLabel", progressBar)
+ProgressPercentLabel.Size = UDim2.new(1, 0, 0.5, 0)
+ProgressPercentLabel.BackgroundTransparency = 1
+ProgressPercentLabel.Text = ""
+ProgressPercentLabel.TextColor3 = THEME.accent
+ProgressPercentLabel.Font = Enum.Font.GothamBlack
+ProgressPercentLabel.TextSize = 8
+ProgressPercentLabel.TextXAlignment = Enum.TextXAlignment.Center
+ProgressPercentLabel.ZIndex = 3
+
+local RadiusInput = Instance.new("TextBox", progressBar)
+RadiusInput.Size = UDim2.new(0, 30, 0, 16)
+RadiusInput.Position = UDim2.new(1, -35, 0.5, -8)
+RadiusInput.BackgroundColor3 = THEME.input
+RadiusInput.Text = tostring(Values.STEAL_RADIUS)
+RadiusInput.TextColor3 = THEME.accent
+RadiusInput.Font = Enum.Font.GothamBold
+RadiusInput.TextSize = 5
+RadiusInput.ZIndex = 3
+Instance.new("UICorner", RadiusInput).CornerRadius = UDim.new(0, 4)
+Instance.new("UIStroke", RadiusInput).Color = THEME.inputStroke
+RadiusInput.FocusLost:Connect(function()
+    local n = tonumber(RadiusInput.Text)
+    if n then Values.STEAL_RADIUS = math.clamp(math.floor(n), 5, 100) end
+    RadiusInput.Text = tostring(Values.STEAL_RADIUS)
+end)
+
+local pTrack = Instance.new("Frame", progressBar)
+pTrack.Size = UDim2.new(0.94, 0, 0, 6)
+pTrack.Position = UDim2.new(0.03, 0, 1, -10)
+pTrack.BackgroundColor3 = THEME.input
+pTrack.ZIndex = 2
+Instance.new("UICorner", pTrack).CornerRadius = UDim.new(1, 0)
+
+ProgressBarFill = Instance.new("Frame", pTrack)
+ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+ProgressBarFill.BackgroundColor3 = THEME.dotOn
+ProgressBarFill.ZIndex = 3
+Instance.new("UICorner", ProgressBarFill).CornerRadius = UDim.new(1, 0)
+
+-- ================= الأزرار الأساسية =================
+local left1 = createToggleButton("AIMBOT", UDim2.new(0, 30, 0, baseY), function(state)
+    Enabled.Aimbot = state
+    if state then startAimbot() else stopAimbot() end
+    if state then Enabled.Life = false; Enabled.Right = false; autoStealActiveForPaths = false end
+end)
+
+local left2 = createToggleButton("DODGE", UDim2.new(0, 30, 0, baseY + spacing), function(state)
+    Enabled.Dodge = state
+    if state then startDodge() else stopDodge() end
+end)
+
+local left3 = createToggleButton("SPIN", UDim2.new(0, 30, 0, baseY + spacing*2), function(state)
+    Enabled.SpinBot = state
+    if state then startSpin() else killSpin() end
+    if state then Enabled.Life = false; Enabled.Right = false; autoStealActiveForPaths = false end
+end)
+
+local right1 = createToggleButton("LIFE", UDim2.new(1, -90, 0, baseY), function(state)
+    Enabled.Life = state
+    if state then
+        autoStealActiveForPaths = true
+        lifeState = 0; rightState = 0; waitingForSteal = false
+        waitAtTarget = false
+        Enabled.Right = false; Enabled.Aimbot = false; Enabled.SpinBot = false
+    else autoStealActiveForPaths = false end
+end)
+
+local right2 = createToggleButton("RIGHT", UDim2.new(1, -90, 0, baseY + spacing), function(state)
+    Enabled.Right = state
+    if state then
+        autoStealActiveForPaths = true
+        rightState = 0; lifeState = 0; waitingForSteal = false
+        waitAtTarget = false
+        Enabled.Life = false; Enabled.Aimbot = false; Enabled.SpinBot = false
+    else autoStealActiveForPaths = false end
+end)
+
+local right3 = createToggleButton("SPEED", UDim2.new(1, -90, 0, baseY + spacing*2), function(state)
+    Enabled.SpeedBoost = state
+end)
+
+-- ===== القائمة الإضافية =====
+local extraFrame = Instance.new("Frame")
+extraFrame.Size = UDim2.new(0, 260, 0, 320) -- زيادة الارتفاع قليلاً لاستيعاب الزر الجديد
+extraFrame.Position = UDim2.new(0.5, -130, 0.5, -160)
+extraFrame.BackgroundColor3 = THEME.bg
+extraFrame.Visible = false
+extraFrame.Active = true
+extraFrame.Draggable = true
+extraFrame.Parent = gui
+Instance.new("UICorner", extraFrame).CornerRadius = UDim.new(0, 10)
+
+local extraBorder = Instance.new("UIStroke", extraFrame)
+extraBorder.Thickness = 2
+extraBorder.Color = THEME.primary
+local extraGradient = Instance.new("UIGradient", extraBorder)
+extraGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, THEME.primary),
+    ColorSequenceKeypoint.new(0.5, THEME.secondary),
+    ColorSequenceKeypoint.new(1, THEME.primary)
+})
+extraGradient.Rotation = 0
+task.spawn(function()
+    while true do
+        for i = 0, 36 do
+            extraGradient.Rotation = i * 10
+            task.wait(0.05)
+        end
+    end
+end)
+
+local sparkleFolder = Instance.new("Folder", extraFrame)
+for i = 1, 6 do
+    local spark = Instance.new("Frame")
+    spark.Size = UDim2.new(0, math.random(2,4), 0, math.random(2,4))
+    spark.Position = UDim2.new(math.random(), 0, math.random(), 0)
+    spark.BackgroundColor3 = THEME.accent
+    spark.BorderSizePixel = 0
+    spark.Parent = sparkleFolder
+    Instance.new("UICorner", spark).CornerRadius = UDim.new(1,0)
+    task.spawn(function()
+        while true do
+            local tween = TweenService:Create(spark, TweenInfo.new(math.random(1,2)), {Position = UDim2.new(math.random(), 0, math.random(), 0)})
+            tween:Play(); tween.Completed:Wait()
+        end
+    end)
+end
+
+local extraTitle = Instance.new("TextLabel", extraFrame)
+extraTitle.Size = UDim2.new(1, 0, 0, 25)
+extraTitle.BackgroundColor3 = THEME.header
+extraTitle.Text = "Syrian - HUB"
+extraTitle.Font = Enum.Font.GothamBold
+extraTitle.TextColor3 = THEME.accent
+extraTitle.TextSize = 14
+Instance.new("UICorner", extraTitle).CornerRadius = UDim.new(0, 6)
+
+local extraClose = Instance.new("TextButton", extraTitle)
+extraClose.Size = UDim2.new(0, 25, 0, 25)
+extraClose.Position = UDim2.new(1, -30, 0, 0)
+extraClose.BackgroundColor3 = Color3.fromRGB(180,0,0)
+extraClose.Text = "X"
+extraClose.TextColor3 = THEME.white
+extraClose.Font = Enum.Font.GothamBold
+extraClose.TextSize = 12
+extraClose.BorderSizePixel = 0
+Instance.new("UICorner", extraClose).CornerRadius = UDim.new(0, 4)
+extraClose.MouseButton1Click:Connect(function() extraFrame.Visible = false end)
+
+openBtn.MouseButton1Click:Connect(function() extraFrame.Visible = not extraFrame.Visible end)
+
+-- دالة لإنشاء زوج من التoggles في صف واحد (معدلة لاستيعاب أزرار TP)
+local function createExtraToggleRow(yPos, toggles)
+    local row = Instance.new("Frame", extraFrame)
+    row.Size = UDim2.new(0.95, 0, 0, 35)
+    row.Position = UDim2.new(0.025, 0, 0, yPos)
+    row.BackgroundTransparency = 1
+
+    for i, toggleData in ipairs(toggles) do
+        local container = Instance.new("Frame", row)
+        container.Size = UDim2.new(0.5, -5, 1, 0)
+        container.Position = UDim2.new((i-1) * 0.5, (i==1 and 0 or -5), 0, 0)
+        container.BackgroundColor3 = THEME.row
+        container.BorderSizePixel = 0
+        Instance.new("UICorner", container).CornerRadius = UDim.new(0, 6)
+
+        local label = Instance.new("TextLabel", container)
+        label.Size = UDim2.new(0.5, 0, 1, 0)
+        label.Position = UDim2.new(0, 5, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Text = toggleData.text
+        label.TextColor3 = THEME.text
+        label.Font = Enum.Font.GothamBold
+        label.TextSize = 10
+        label.TextXAlignment = Enum.TextXAlignment.Left
+
+        local toggleBtn = Instance.new("TextButton", container)
+        toggleBtn.Size = UDim2.new(0, 36, 0, 20)
+        toggleBtn.Position = UDim2.new(1, -41, 0.5, -10)
+        toggleBtn.BackgroundColor3 = THEME.toggleOff
+        toggleBtn.Text = ""
+        toggleBtn.BorderSizePixel = 0
+        Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0, 10)
+
+        local ball = Instance.new("Frame", toggleBtn)
+        ball.Size = UDim2.new(0, 14, 0, 14)
+        ball.Position = UDim2.new(0, 3, 0.5, -7)
+        ball.BackgroundColor3 = THEME.toggleBall
+        ball.BorderSizePixel = 0
+        Instance.new("UICorner", ball).CornerRadius = UDim.new(0, 7)
+
+        local active = false
+        local function update()
+            if active then
+                toggleBtn.BackgroundColor3 = THEME.primary
+                ball.BackgroundColor3 = THEME.white
+                ball.Position = UDim2.new(1, -17, 0.5, -7)
+            else
+                toggleBtn.BackgroundColor3 = THEME.toggleOff
+                ball.BackgroundColor3 = THEME.toggleBall
+                ball.Position = UDim2.new(0, 3, 0.5, -7)
+            end
+        end
+
+        toggleBtn.MouseButton1Click:Connect(function()
+            active = not active
+            update()
+            Enabled[toggleData.varName] = active
+            if toggleData.callback then toggleData.callback(active) end
+        end)
+    end
+end
+
+-- إنشاء الأزرار في صفوف
+local extraY = 30
+
+-- الصف الأول: Jump Boost و Anti Ragdoll
+createExtraToggleRow(extraY, {
+    {text = "Jump Boost", varName = "JumpBoost"},
+    {text = "Anti Ragdoll", varName = "AntiRagdoll", callback = function(v) 
+        if v then startAdvancedAntiRagdoll() else stopAdvancedAntiRagdoll() end
+    end}
+})
+extraY = extraY + 40
+
+-- الصف الثاني: Unwalk و Galaxy
+createExtraToggleRow(extraY, {
+    {text = "Unwalk", varName = "Unwalk", callback = function(v) if v then enableUnwalk() else if unwalkConn then unwalkConn:Disconnect(); unwalkConn = nil end end end},
+    {text = "Galaxy", varName = "Galaxy", callback = function(v) if v then startGalaxy() else stopGalaxy() end end}
+})
+extraY = extraY + 40
+
+-- الصف الثالث: ESP و Speed 56.5
+createExtraToggleRow(extraY, {
+    {text = "ESP", varName = "ESP", callback = function(v) if v then enableESP() else disableESP() end end},
+    {text = "Speed 56.5", varName = "ExtraSpeed", callback = function(v) if v then startExtraSpeed() else stopExtraSpeed() end end}
+})
+extraY = extraY + 40
+
+-- الصف الرابع: Auto Steal (بمفرده)
+createExtraToggleRow(extraY, {
+    {text = "Auto Steal", varName = "AutoSteal", callback = function(v) 
+        progressBar.Visible = v
+        if v then startAutoSteal() else stopAutoSteal() end
+    end},
+    {text = "", varName = ""} -- عنصر فارغ لشغل المساحة
+})
+extraY = extraY + 40
+
+-- الصف الخامس: TP Right (جديد)
+createExtraToggleRow(extraY, {
+    {text = "TP Right", varName = "AutoTPRight", callback = function(v)
+        if v then
+            doTPRight() -- نقل فوري عند التفعيل
+            startRagdollDetector() -- بدء المراقبة
+            -- إيقاف TP Life إذا كان مفعلًا
+            if Enabled.AutoTPL2 then
+                Enabled.AutoTPL2 = false
+                -- تحديث واجهة TP Life (تحتاج إلى طريقة للوصول للزر)
+            end
+        else
+            -- إذا تم إيقاف TP Right، نتحقق إذا كان TP Life لا يزال مفعلًا، إذا لا، نوقف المراقبة
+            if not Enabled.AutoTPL2 then
+                stopRagdollDetector()
+            end
+        end
+    end},
+    {text = "TP Life", varName = "AutoTPL2", callback = function(v)
+        if v then
+            doTPL2() -- نقل فوري إلى L2 عند التفعيل
+            startRagdollDetector() -- بدء المراقبة
+            -- إيقاف TP Right إذا كان مفعلًا
+            if Enabled.AutoTPRight then
+                Enabled.AutoTPRight = false
+                -- تحديث واجهة TP Right
+            end
+        else
+            if not Enabled.AutoTPRight then
+                stopRagdollDetector()
+            end
+        end
+    end}
+})
+extraY = extraY + 40
+
+-- ================= ESP للإحداثيات =================
+local espFolder = Instance.new("Folder", Workspace)
+espFolder.Name = "CoordESP"
+local function addESP(pos, text, color)
+    local p = Instance.new("Part", espFolder)
+    p.Anchored = true; p.CanCollide = false; p.Material = Enum.Material.Neon
+    p.Color = color; p.Shape = Enum.PartType.Ball; p.Size = Vector3.new(1,1,1)
+    p.Position = pos; p.Transparency = 0.2
+    local bill = Instance.new("BillboardGui", p)
+    bill.AlwaysOnTop = true; bill.Size = UDim2.new(0,100,0,20); bill.StudsOffset = Vector3.new(0,2,0); bill.MaxDistance = 300
+    local label = Instance.new("TextLabel", bill)
+    label.Size = UDim2.new(1,0,1,0); label.BackgroundTransparency = 1; label.Text = text
+    label.TextColor3 = color; label.TextStrokeColor3 = Color3.new(0,0,0); label.Font = Enum.Font.GothamBold; label.TextSize = 12
+end
+addESP(Values.L1, "L1", Color3.fromRGB(255, 0, 0))
+addESP(Values.L2, "L2", Color3.fromRGB(255, 0, 0))
+addESP(Values.R1, "R1", Color3.fromRGB(255, 0, 0))
+addESP(Values.R2, "R2", Color3.fromRGB(255, 0, 0))
+
+-- ================= KEYBIND SpeedBoost =================
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.V then Enabled.SpeedBoost = not Enabled.SpeedBoost end
+end)
+
+-- ================= تحديث الشخصية =================
+updateCharacter()
+Player.CharacterAdded:Connect(function()
+    task.wait(0.5); updateCharacter()
+    if Enabled.SpinBot then startSpin() end
+    if Enabled.ESP then enableESP() end
+    makeSpeedBB()
+    if Enabled.ExtraSpeed then startExtraSpeed() end
+    if Enabled.HitboxExpander then startHitboxExpander() end
+    if Enabled.AutoSteal then startAutoSteal() end
+    if Enabled.AutoTPRight or Enabled.AutoTPL2 then startRagdollDetector() end
+    if Enabled.AntiRagdoll then startAdvancedAntiRagdoll() end
+end)
+
+if Enabled.ESP then enableESP() end
+makeSpeedBB()
+
+print("✅ Nine Hub Duels - تم تحديث Anti-Ragdoll بالنظام المتقدم من Kawatan Duels و إضافة TP Life.")
