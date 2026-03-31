@@ -1,5 +1,3 @@
--- leaked by https://discord.gg/WfTDsBPR9n join for more sources cheap
-
 local Lib = Instance.new("ScreenGui")
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
