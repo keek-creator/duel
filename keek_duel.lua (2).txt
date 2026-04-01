@@ -819,11 +819,11 @@ end)
 -- ========== FUNCTIONAL BUTTONS ==========
 local buttonData = {
     {name = "Float", pos = UDim2.new(0.7, 0, 0.3, 0), func = "float"},
-    {name = "Bat Aimbot", pos = UDim2.new(0.82, 0, 0.3, 0), func = nil},
-    {name = "Auto Left", pos = UDim2.new(0.7, 0, 0.36, 0), func = "autoleft"},
-    {name = "Auto Right", pos = UDim2.new(0.82, 0, 0.36, 0), func = "autoright"},
-    {name = "TP [Left]", pos = UDim2.new(0.7, 0, 0.42, 0), func = nil},
-    {name = "TP [Right]", pos = UDim2.new(0.82, 0, 0.42, 0), func = nil}
+    {name = "BatAim", pos = UDim2.new(0.82, 0, 0.3, 0), func = nil},
+    {name = "Left", pos = UDim2.new(0.7, 0, 0.36, 0), func = "autoleft"},
+    {name = "Right", pos = UDim2.new(0.82, 0, 0.36, 0), func = "autoright"},
+    {name = "TP[L]", pos = UDim2.new(0.7, 0, 0.42, 0), func = nil},
+    {name = "TP[R]", pos = UDim2.new(0.82, 0, 0.42, 0), func = nil}
 }
 
 local buttons = {}
