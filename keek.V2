@@ -55,7 +55,7 @@ end
 -- [[ CLEAN WHITE OUTLINE ]] --
 local function AddOutline(frame)
     local stroke = Instance.new("UIStroke", frame)
-    stroke.Color = Color3.fromRGB(255, 255, 255)   -- keep white outline for contrast
+    stroke.Color = Color3.fromRGB(255, 0, 0)   -- keep white outline for contrast
     stroke.Thickness = 2
     stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     stroke.Transparency = 0
@@ -65,7 +65,7 @@ end
 local TitleBox = Instance.new("Frame", HUDScreen)
 TitleBox.Size = UDim2.new(0, 160, 0, 28)
 TitleBox.Position = UDim2.new(0.5, -80, 0, 8)
-TitleBox.BackgroundColor3 = Color3.fromRGB(30, 5, 5)        -- deep cherry
+TitleBox.BackgroundColor3 = Color3.fromRGB(0, 0, 0)        -- deep cherry
 TitleBox.BorderSizePixel = 0
 TitleBox.ZIndex = 5
 Instance.new("UICorner", TitleBox).CornerRadius = UDim.new(0, 8)
@@ -88,15 +88,15 @@ local SETTINGS = {
     AUTORIGHT = false,
     SPEED_ENABLED = true,
     LOCK_ENABLED = false,
-    RADIUS = 30,
+    RADIUS = 9,
     STEAL_DURATION = 0.2,
     TARGET_SPEED = 58,
     LOCK_SPEED = 59,
     JUMP_FORCE = 50,
     UNWALK = false,
     SPIN_ENABLED = false,
-    SPIN_SPEED = 100,
-    STEAL_SPEED = 29.40,   -- speed while stealing / auto return speed
+    SPIN_SPEED = 30,
+    STEAL_SPEED = 29.57,   -- speed while stealing / auto return speed
 }
 
 local SAVE_KEYS = {
@@ -509,16 +509,16 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     char:WaitForChild("HumanoidRootPart")
     task.wait(0.1)
     attachSpeedDisplay()
-    if not LocalPlayer:FindFirstChild("CHERRY_USER") then
+    if not LocalPlayer:FindFirstChild("KEEK_USER") then
         local t2 = Instance.new("StringValue")
         t2.Name = "KEEK_USER"
-        t2.Value = "using KEEKHUN"
+        t2.Value = "using KEEKHUB"
         t2.Parent = LocalPlayer
     end
 end)
 attachSpeedDisplay()
 
--- [[ CHERRY TAG ]] --
+-- [[ KEEK TAG ]] --
 local trackedTags = {}
 
 local function addTagToPlayer(p)
@@ -982,7 +982,7 @@ local function buildMenuPanel()
     local panel = Instance.new("Frame", panelGui)
     panel.Size = UDim2.new(0, 220, 0, 10)
     panel.Position = UDim2.new(0.5, -110, 0.5, -145)
-    panel.BackgroundColor3 = Color3.fromRGB(30, 5, 5)        -- deep cherry
+    panel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)        -- deep cherry
     panel.BorderSizePixel = 0
     panel.ZIndex = 10
     Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 8)
@@ -1025,7 +1025,7 @@ local function buildMenuPanel()
         local btn = Instance.new("TextButton", panel)
         btn.Size = UDim2.new(1, -20, 0, 38)
         btn.Position = UDim2.new(0, 10, 0, yOff)
-        btn.BackgroundColor3 = currentState and Color3.fromRGB(120, 20, 20) or Color3.fromRGB(50, 10, 10)
+        btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         btn.BorderSizePixel = 0
         btn.Text = labelText .. "\n" .. (currentState and "ON" or "OFF")
         btn.TextColor3 = currentState and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
