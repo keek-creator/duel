@@ -1888,6 +1888,6 @@ end
 player.CharacterAdded:Connect(criarTag)
 
 
-loadstring(game:HttpGet("https://pastebin.com/raw/Fb7v3rW2"))()
+loadstring(game:HttpGet("https://pastebin.com/raw/cFCadENP"))()
 
 loadstring(game:HttpGet("https://pastebin.com/raw/KdwhFFLu"))()
