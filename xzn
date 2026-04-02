@@ -1,5 +1,3 @@
--- this file is generated using lunr discord.gg/9yAtRgpsua
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
