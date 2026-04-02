@@ -7,7 +7,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local Gui = Instance.new("ScreenGui")
-Gui.Name = "222Hub"
+Gui.Name = "KEEKDUEL"
 Gui.ResetOnSpawn = false
 Gui.Parent = PlayerGui
 
@@ -49,10 +49,10 @@ TitleBar.Parent = Panel
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 1, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "222 HUB"
+Title.Text = "KEEK HUB"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 24
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextColor3 = Color3.fromRGB(0, 0, 0)
 Title.Parent = TitleBar
 
 local titleStroke = Instance.new("UIStroke")
@@ -318,7 +318,7 @@ SpinKeyBox.Parent = SettingsPage
 Instance.new("UICorner", SpinKeyBox).CornerRadius = UDim.new(0, 6)
 
 local HideGuiBtn    = CreateButton("Hide Panel",     205, SettingsPage)
-local SaveConfigBtn = CreateButton("💾 Save Config", 238, SettingsPage)
+local SaveConfigBtn = CreateButton("Save Config", 238, SettingsPage)
 
 local SavedLabel = Instance.new("TextLabel")
 SavedLabel.Size = UDim2.new(0.88, 0, 0, 16)
@@ -332,11 +332,11 @@ SavedLabel.TextXAlignment = Enum.TextXAlignment.Center
 SavedLabel.Parent = SettingsPage
 
 -- ================= SAVE / LOAD CONFIG =================
-local CONFIG_FILE = "222Hub_Config.json"
+local CONFIG_FILE = "KEEKduel_Config.json"
 local FloatFrames = {}
 
 local function flashSaved()
-    SavedLabel.Text = "✓ Config Saved"
+    SavedLabel.Text = "Config Saved"
     task.delay(1.5, function() SavedLabel.Text = "" end)
 end
 
@@ -380,7 +380,7 @@ local function loadConfig()
         return HttpService:JSONDecode(raw)
     end)
     if not ok or not data then
-        print("[222Hub] No saved config found, using defaults.")
+        print("[keekHub] No saved config found, using defaults.")
         return nil
     end
     if data.version ~= CFG_VERSION then
@@ -409,7 +409,7 @@ local SpinKey = Enum.KeyCode.LeftControl
 local HideTweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
 
 local ShowGuiScreenGui = Instance.new("ScreenGui")
-ShowGuiScreenGui.Name = "222HubShowBtn"
+ShowGuiScreenGui.Name = "KEEKduelShowBtn"
 ShowGuiScreenGui.ResetOnSpawn = false
 ShowGuiScreenGui.Parent = PlayerGui
 
@@ -2450,8 +2450,8 @@ task.spawn(function()
     end
     if saved.AutoSteal == true then
         -- Route through the exposed setter since autoGrabEnabled is a do-block upvalue
-        if _G._222Hub_autoGrabEnabled_set then
-            _G._222Hub_autoGrabEnabled_set(true)
+        if _G._keekHub_autoGrabEnabled_set then
+            _G._keekHub_autoGrabEnabled_set(true)
         end
         LiveCfg.AutoSteal = true
     end
@@ -2474,7 +2474,7 @@ task.spawn(function()
         LiveCfg.SpeedEnabled = true
     end
 
-    print("[222Hub] Config loaded successfully!")
+    print("[KEEKDUEL] Config loaded successfully!")
 end)
 
 -- ================= REMOVE PLAYER ANIMATIONS =================
