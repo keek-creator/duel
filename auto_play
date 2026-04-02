@@ -1,0 +1,136 @@
+task.wait()
+local IsLoaded = game:IsLoaded()
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local ScreenGui = Instance.new("ScreenGui", {})
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 180, 0, 60)
+Frame.Position = UDim2.new(0.4, 0, 0.4, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Frame.BorderColor3 = Color3.fromRGB(255, 255, 255)
+Frame.BorderSizePixel = 2
+local UICorner = Instance.new("UICorner", Frame)
+UICorner.CornerRadius = UDim.new(0, 10)
+local TextLabel = Instance.new("TextLabel", Frame)
+TextLabel.Size = UDim2.new(1, 0, 0, 16)
+TextLabel.Position = UDim2.new(0, 0, 0, 2)
+TextLabel.Text = "KEEKHUB"
+TextLabel.BackgroundTransparency = 1
+TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextLabel.Font = Enum.Font.GothamBold
+TextLabel.TextSize = 14
+local conn = Frame.InputBegan:Connect(function(input, gameProcessed)
+end)
+local conn1 = UIS.InputChanged:Connect(function(input, gameProcessed)
+end)
+local TextButton = Instance.new("TextButton", Frame)
+TextButton.Size = UDim2.new(0, 80, 0, 30)
+TextButton.Position = UDim2.new(0, 5, 0, 26)
+TextButton.Text = "Auto L"
+TextButton.Font = Enum.Font.GothamSemibold
+TextButton.TextSize = 14
+TextButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TextButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+local UICorner2 = Instance.new("UICorner", TextButton)
+UICorner2.CornerRadius = UDim.new(0, 8)
+local TextButton3 = Instance.new("TextButton", Frame)
+TextButton3.Size = UDim2.new(0, 80, 0, 30)
+TextButton3.Position = UDim2.new(0, 95, 0, 26)
+TextButton3.Text = "Auto R"
+TextButton3.Font = Enum.Font.GothamSemibold
+TextButton3.TextSize = 14
+TextButton3.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TextButton3.TextColor3 = Color3.fromRGB(0, 0, 0)
+local UICorner4 = Instance.new("UICorner", TextButton3)
+UICorner4.CornerRadius = UDim.new(0, 8)
+local TextButton5 = Instance.new("TextButton", Frame)
+TextButton5.Size = UDim2.new(0, 22, 0, 22)
+TextButton5.Position = UDim2.new(1, -26, 0, 2)
+TextButton5.Text = "⚙️"
+TextButton5.BackgroundTransparency = 1
+TextButton5.TextColor3 = Color3.fromRGB(255, 255, 255)
+local Frame6 = Instance.new("Frame", ScreenGui)
+Frame6.Size = UDim2.new(0, 200, 0, 150)
+Frame6.Position = UDim2.new(0.5, -100, 0.5, -75)
+Frame6.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+Frame6.BorderSizePixel = 0
+Frame6.Visible = false
+Frame6.BackgroundTransparency = 1
+local UICorner7 = Instance.new("UICorner", Frame6)
+UICorner7.CornerRadius = UDim.new(0, 10)
+local TextButton8 = Instance.new("TextButton", Frame6)
+TextButton8.Size = UDim2.new(0, 22, 0, 22)
+TextButton8.Position = UDim2.new(1, -24, 0, 2)
+TextButton8.Text = "X"
+TextButton8.BackgroundTransparency = 1
+TextButton8.TextColor3 = Color3.fromRGB(255, 255, 255)
+local TextLabel9 = Instance.new("TextLabel", Frame6)
+TextLabel9.Size = UDim2.new(1, 0, 0, 20)
+TextLabel9.Position = UDim2.new(0, 0, 0, 20)
+TextLabel9.Text = "Speed No Steal"
+TextLabel9.BackgroundTransparency = 1
+TextLabel9.TextColor3 = Color3.new(1, 1, 1)
+TextLabel9.Font = Enum.Font.GothamBold
+TextLabel9.TextSize = 14
+local TextBox = Instance.new("TextBox", Frame6)
+TextBox.Size = UDim2.new(0.9, 0, 0, 28)
+TextBox.Position = UDim2.new(0.05, 0, 0, 42)
+TextBox.Text = "56"
+TextBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+TextBox.TextColor3 = Color3.new(1, 1, 1)
+TextBox.Font = Enum.Font.Gotham
+TextBox.TextSize = 14
+local UICorner10 = Instance.new("UICorner", TextBox)
+local conn11 = TextBox.FocusLost:Connect(function(enterPressed, inputObject)
+end)
+local TextLabel12 = Instance.new("TextLabel", Frame6)
+TextLabel12.Size = UDim2.new(1, 0, 0, 20)
+TextLabel12.Position = UDim2.new(0, 0, 0, 70)
+TextLabel12.Text = "Speed Stealing"
+TextLabel12.BackgroundTransparency = 1
+TextLabel12.TextColor3 = Color3.new(1, 1, 1)
+TextLabel12.Font = Enum.Font.GothamBold
+TextLabel12.TextSize = 14
+local TextBox13 = Instance.new("TextBox", Frame6)
+TextBox13.Size = UDim2.new(0.9, 0, 0, 28)
+TextBox13.Position = UDim2.new(0.05, 0, 0, 92)
+TextBox13.Text = "29"
+TextBox13.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+TextBox13.TextColor3 = Color3.new(1, 1, 1)
+TextBox13.Font = Enum.Font.Gotham
+TextBox13.TextSize = 14
+local UICorner14 = Instance.new("UICorner", TextBox13)
+local conn15 = TextBox13.FocusLost:Connect(function(enterPressed, inputObject)
+end)
+local tween = TweenService:Create(Frame6, TweenInfo.new(0.25), {
+    BackgroundTransparency = 0
+})
+local tween = tween
+local tween16 = TweenService:Create(Frame6, TweenInfo.new(0.25), {
+    BackgroundTransparency = 1
+})
+local tween16 = tween16
+local conn17 = TextButton5.MouseButton1Click:Connect(function()
+    Frame6.Visible = true
+    Frame6.BackgroundTransparency = 1
+    tween:Play()
+end)
+local conn18 = TextButton8.MouseButton1Click:Connect(function()
+    tween16:Play()
+    local waitResult = tween16.Completed:Wait()
+    Frame6.Visible = false
+end)
+local conn19 = TextButton.MouseButton1Click:Connect(function()
+    TextButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+    task.spawn(function()
+        TextButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+end)
+local conn20 = TextButton3.MouseButton1Click:Connect(function()
+    TextButton3.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+    task.spawn(function()
+        TextButton3.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+end)
