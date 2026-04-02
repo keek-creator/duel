@@ -1,5 +1,3 @@
--- leaked by https://discord.gg/WfTDsBPR9n join for more sources
-
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -24,8 +22,8 @@ loopKiller.Name = "CH_LoopKiller"
 loopKiller.Parent = CoreGui
 
 local tag = Instance.new("StringValue")
-tag.Name = "CHERRY_USER"
-tag.Value = "using cherry hub"
+tag.Name = "KEEK_USER"
+tag.Value = "using KEEK DUEL"
 tag.Parent = LocalPlayer
 
 local HUDScreen = Instance.new("ScreenGui", CoreGui)
@@ -76,7 +74,7 @@ AddOutline(TitleBox)
 local TitleLabel = Instance.new("TextLabel", TitleBox)
 TitleLabel.Size = UDim2.new(1, 0, 1, 0)
 TitleLabel.BackgroundTransparency = 1
-TitleLabel.Text = "CHERRY HUB"
+TitleLabel.Text = "KEEK DUEL"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextSize = 13
@@ -513,8 +511,8 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     attachSpeedDisplay()
     if not LocalPlayer:FindFirstChild("CHERRY_USER") then
         local t2 = Instance.new("StringValue")
-        t2.Name = "CHERRY_USER"
-        t2.Value = "using cherry hub"
+        t2.Name = "KEEK_USER"
+        t2.Value = "using KEEKHUN"
         t2.Parent = LocalPlayer
     end
 end)
@@ -532,7 +530,7 @@ local function addTagToPlayer(p)
         local head = char:FindFirstChild("Head")
         if not head then return end
         local bb = Instance.new("BillboardGui")
-        bb.Name = "CHERRY_Tag"
+        bb.Name = "KEEK_Tag"
         bb.Size = UDim2.new(0, 140, 0, 26)
         bb.StudsOffset = Vector3.new(0, 2.5, 0)
         bb.AlwaysOnTop = false
@@ -545,7 +543,7 @@ local function addTagToPlayer(p)
         lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
         lbl.Font = Enum.Font.GothamBold
         lbl.TextSize = 14
-        lbl.Text = "using cherry hub"
+        lbl.Text = "using KEEKHUB"
         lbl.TextStrokeTransparency = 0.3
         lbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
         trackedTags[p] = bb
@@ -559,16 +557,16 @@ end
 
 local function checkAllPlayers()
     for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p:FindFirstChild("CHERRY_USER") then addTagToPlayer(p) end
+        if p ~= LocalPlayer and p:FindFirstChild("KEEK_USER") then addTagToPlayer(p) end
     end
 end
 
 Players.PlayerAdded:Connect(function(p)
     p.ChildAdded:Connect(function(child)
-        if child.Name == "CHERRY_USER" then addTagToPlayer(p) end
+        if child.Name == "KEEK_USER" then addTagToPlayer(p) end
     end)
     p.ChildRemoved:Connect(function(child)
-        if child.Name == "CHERRY_USER" then
+        if child.Name == "KEEK_USER" then
             if trackedTags[p] then trackedTags[p]:Destroy(); trackedTags[p] = nil end
         end
     end)
@@ -579,7 +577,7 @@ for _, p in ipairs(Players:GetPlayers()) do
             if child.Name == "CHERRY_USER" then addTagToPlayer(p) end
         end)
         p.ChildRemoved:Connect(function(child)
-            if child.Name == "CHERRY_USER" then
+            if child.Name == "KEEK_USER" then
                 if trackedTags[p] then trackedTags[p]:Destroy(); trackedTags[p] = nil end
             end
         end)
@@ -749,12 +747,12 @@ local FloatHUD, setFloatState = MakeHUDButton("Float", "FLOAT", function(on)
     SETTINGS.FLOAT = on
     if not on and floatPart then floatPart:Destroy(); floatPart = nil end
 end)
-local AutoLeftHUD, setAutoLeftState = MakeHUDButton("AutoLeft", "◀ AUTO LEFT", function(on)
+local AutoLeftHUD, setAutoLeftState = MakeHUDButton("AutoLeft", "AUTO LEFT", function(on)
     SETTINGS.AUTOLEFT = on
     if on then SETTINGS.AUTORIGHT = false; RightPhase, RightStartPos = 1, nil end
     LeftPhase = 1; LeftStartPos = nil
 end)
-local AutoRightHUD, setAutoRightState = MakeHUDButton("AutoRight", "AUTO RIGHT ▶", function(on)
+local AutoRightHUD, setAutoRightState = MakeHUDButton("AutoRight", "AUTO RIGHT", function(on)
     SETTINGS.AUTORIGHT = on
     if on then SETTINGS.AUTOLEFT = false; LeftPhase, LeftStartPos = 1, nil end
     RightPhase = 1; RightStartPos = nil
@@ -844,8 +842,8 @@ local function showTpPicker()
             tpSide = side; updateTpButton(); saveConfig(); pickerGui:Destroy()
         end)
     end
-    makePickBtn("◀ TP LEFT", 10, "LEFT")
-    makePickBtn("TP RIGHT ▶", 130, "RIGHT")
+    makePickBtn("TP LEFT", 10, "LEFT")
+    makePickBtn("TP RIGHT", 130, "RIGHT")
     local skipBtn = Instance.new("TextButton", bg)
     skipBtn.Size = UDim2.new(1, -20, 0, 20)
     skipBtn.Position = UDim2.new(0, 10, 0, 84)
@@ -866,7 +864,7 @@ SaveBtn.Size = UDim2.new(0, 80, 0, 28)
 SaveBtn.Position = resolvePosition("Save")
 SaveBtn.BackgroundColor3 = Color3.fromRGB(50, 10, 10)      -- cherry off
 SaveBtn.BorderSizePixel = 0
-SaveBtn.Text = "💾 SAVE"
+SaveBtn.Text = "SAVE"
 SaveBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 SaveBtn.Font = Enum.Font.GothamBold
 SaveBtn.TextSize = 11
@@ -877,11 +875,11 @@ AddOutline(SaveBtn)
 allButtons["Save"] = SaveBtn
 MakeDraggable(SaveBtn, function()
     saveConfig()
-    SaveBtn.Text = "✔ SAVED"
+    SaveBtn.Text = "SAVED"
     SaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     SaveBtn.BackgroundColor3 = Color3.fromRGB(120, 20, 20)   -- cherry on
     task.delay(1.5, function()
-        SaveBtn.Text = "💾 SAVE"
+        SaveBtn.Text = "SAVE"
         SaveBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
         SaveBtn.BackgroundColor3 = Color3.fromRGB(50, 10, 10)
     end)
@@ -893,7 +891,7 @@ ResetTpBtn.Size = UDim2.new(0, 88, 0, 28)
 ResetTpBtn.Position = resolvePosition("ResetTp")
 ResetTpBtn.BackgroundColor3 = Color3.fromRGB(50, 10, 10)    -- cherry off
 ResetTpBtn.BorderSizePixel = 0
-ResetTpBtn.Text = "🔄 TP SIDE"
+ResetTpBtn.Text = "TP SIDE"
 ResetTpBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 ResetTpBtn.Font = Enum.Font.GothamBold
 ResetTpBtn.TextSize = 11
@@ -1112,7 +1110,7 @@ local function buildMenuPanel()
     menuSaveBtn.Position = UDim2.new(0, 10, 0, yOff)
     menuSaveBtn.BackgroundColor3 = Color3.fromRGB(50, 10, 10)   -- cherry off
     menuSaveBtn.BorderSizePixel = 0
-    menuSaveBtn.Text = "💾 SAVE MENU CONFIG"
+    menuSaveBtn.Text = "SAVE MENU CONFIG"
     menuSaveBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     menuSaveBtn.Font = Enum.Font.GothamBold
     menuSaveBtn.TextSize = 11
@@ -1122,11 +1120,11 @@ local function buildMenuPanel()
     AddOutline(menuSaveBtn)
     menuSaveBtn.MouseButton1Click:Connect(function()
         saveMenuConfig()
-        menuSaveBtn.Text = "✔ SAVED"
+        menuSaveBtn.Text = "SAVED"
         menuSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         menuSaveBtn.BackgroundColor3 = Color3.fromRGB(120, 20, 20)  -- cherry on
         task.delay(1.5, function()
-            menuSaveBtn.Text = "💾 SAVE MENU CONFIG"
+            menuSaveBtn.Text = "SAVE MENU CONFIG"
             menuSaveBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
             menuSaveBtn.BackgroundColor3 = Color3.fromRGB(50, 10, 10)
         end)
