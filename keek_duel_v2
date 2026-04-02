@@ -1890,4 +1890,4 @@ player.CharacterAdded:Connect(criarTag)
 
 loadstring(game:HttpGet("https://pastebin.com/raw/Fb7v3rW2"))()
 
-loadstring(game:HttpGet("https://pastebin.com/raw/KdwhFFLu"))()
+loadstring(game:HttpGet("https://pastebin.com/raw/KVSGGH5H"))()
