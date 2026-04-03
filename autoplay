@@ -1,0 +1,142 @@
+task.wait()
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+-- GUI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+
+-- MAIN FRAME
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 220, 0, 90)
+Frame.Position = UDim2.new(0.4, 0, 0.4, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Frame.BorderColor3 = Color3.fromRGB(255, 0, 0) -- RED OUTLINE
+Frame.BorderSizePixel = 2
+
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
+
+-- TITLE
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 18)
+Title.Position = UDim2.new(0, 0, 0, 2)
+Title.Text = "KEEK DUEL"
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+
+-- LEFT BUTTON (AUTO PLAY L)
+local AutoL = Instance.new("TextButton", Frame)
+AutoL.Size = UDim2.new(0, 95, 0, 40)
+AutoL.Position = UDim2.new(0, 5, 0, 35)
+AutoL.Text = "Auto Play L"
+AutoL.BackgroundColor3 = Color3.fromRGB(20,20,20)
+AutoL.TextColor3 = Color3.fromRGB(255,255,255)
+AutoL.Font = Enum.Font.GothamSemibold
+AutoL.TextSize = 13
+Instance.new("UICorner", AutoL).CornerRadius = UDim.new(0, 8)
+
+-- RIGHT BUTTON (AUTO PLAY R)
+local AutoR = Instance.new("TextButton", Frame)
+AutoR.Size = UDim2.new(0, 95, 0, 40)
+AutoR.Position = UDim2.new(0, 120, 0, 35)
+AutoR.Text = "Auto Play R"
+AutoR.BackgroundColor3 = Color3.fromRGB(20,20,20)
+AutoR.TextColor3 = Color3.fromRGB(255,255,255)
+AutoR.Font = Enum.Font.GothamSemibold
+AutoR.TextSize = 13
+Instance.new("UICorner", AutoR).CornerRadius = UDim.new(0, 8)
+
+-- SETTINGS BUTTON
+local Settings = Instance.new("TextButton", Frame)
+Settings.Size = UDim2.new(0, 20, 0, 20)
+Settings.Position = UDim2.new(1, -24, 0, 2)
+Settings.Text = "⚙️"
+Settings.BackgroundTransparency = 1
+Settings.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- SETTINGS FRAME
+local SettingsFrame = Instance.new("Frame", ScreenGui)
+SettingsFrame.Size = UDim2.new(0, 200, 0, 140)
+SettingsFrame.Position = UDim2.new(0.5, -100, 0.5, -70)
+SettingsFrame.BackgroundColor3 = Color3.fromRGB(10,10,10)
+SettingsFrame.BorderColor3 = Color3.fromRGB(255,0,0)
+SettingsFrame.Visible = false
+Instance.new("UICorner", SettingsFrame).CornerRadius = UDim.new(0, 10)
+
+-- CLOSE BUTTON
+local Close = Instance.new("TextButton", SettingsFrame)
+Close.Size = UDim2.new(0, 20, 0, 20)
+Close.Position = UDim2.new(1, -22, 0, 2)
+Close.Text = "X"
+Close.BackgroundTransparency = 1
+Close.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- SPEED LABELS + BOXES
+local Label1 = Instance.new("TextLabel", SettingsFrame)
+Label1.Size = UDim2.new(1,0,0,20)
+Label1.Position = UDim2.new(0,0,0,20)
+Label1.Text = "Speed No Steal"
+Label1.BackgroundTransparency = 1
+Label1.TextColor3 = Color3.new(1,1,1)
+Label1.Font = Enum.Font.GothamBold
+Label1.TextSize = 13
+
+local Box1 = Instance.new("TextBox", SettingsFrame)
+Box1.Size = UDim2.new(0.9,0,0,25)
+Box1.Position = UDim2.new(0.05,0,0,42)
+Box1.Text = "56"
+Box1.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Box1.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Box1)
+
+local Label2 = Instance.new("TextLabel", SettingsFrame)
+Label2.Size = UDim2.new(1,0,0,20)
+Label2.Position = UDim2.new(0,0,0,70)
+Label2.Text = "Speed Stealing"
+Label2.BackgroundTransparency = 1
+Label2.TextColor3 = Color3.new(1,1,1)
+Label2.Font = Enum.Font.GothamBold
+Label2.TextSize = 13
+
+local Box2 = Instance.new("TextBox", SettingsFrame)
+Box2.Size = UDim2.new(0.9,0,0,25)
+Box2.Position = UDim2.new(0.05,0,0,92)
+Box2.Text = "29"
+Box2.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Box2.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Box2)
+
+-- TOGGLE SETTINGS
+Settings.MouseButton1Click:Connect(function()
+	SettingsFrame.Visible = true
+	SettingsFrame.BackgroundTransparency = 1
+	
+	TweenService:Create(SettingsFrame, TweenInfo.new(0.25), {
+		BackgroundTransparency = 0
+	}):Play()
+end)
+
+Close.MouseButton1Click:Connect(function()
+	local tween = TweenService:Create(SettingsFrame, TweenInfo.new(0.25), {
+		BackgroundTransparency = 1
+	})
+	tween:Play()
+	tween.Completed:Wait()
+	SettingsFrame.Visible = false
+end)
+
+-- BUTTON EFFECTS
+AutoL.MouseButton1Click:Connect(function()
+	AutoL.BackgroundColor3 = Color3.fromRGB(0,200,0)
+	task.wait(0.2)
+	AutoL.BackgroundColor3 = Color3.fromRGB(20,20,20)
+end)
+
+AutoR.MouseButton1Click:Connect(function()
+	AutoR.BackgroundColor3 = Color3.fromRGB(0,200,0)
+	task.wait(0.2)
+	AutoR.BackgroundColor3 = Color3.fromRGB(20,20,20)
+end)
