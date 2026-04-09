@@ -1,0 +1,1260 @@
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local Player = Players.LocalPlayer
+
+-- ============================================================
+-- SERVICES & SAFE CHARACTER WAIT
+-- ============================================================
+local function waitForCharacter()
+    local char = Player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
+        return char
+    end
+    return Player.CharacterAdded:Wait()
+end
+task.spawn(waitForCharacter)
+
+if not getgenv then getgenv = function() return _G end end
+
+-- ============================================================
+-- STATE
+-- ============================================================
+local Enabled = {
+    SpeedBoost        = false,
+    AntiRagdoll       = false,
+    HitCircle         = false,
+    Float             = false,
+    SpeedWhileStealing= false,
+    AutoSteal         = false,
+    Unwalk            = false,
+    OptimizerXRay     = false,
+    SpamBat           = false,
+    Helicopter        = false,
+    Vibrance          = false,
+    AutoRight         = false,
+    AutoLeft          = false,
+    GalaxyMode        = false,
+    BatAimbot         = false,
+    InfiniteJump      = false,
+    SafeConfig        = false,
+    LockFloatPosition = false,
+    Taunt             = false,
+    TPLeft            = false,
+    TPRight           = false,
+}
+
+local Values = {
+    BoostSpeed           = 30,
+    SpinSpeed            = 30,
+    StealingSpeedValue   = 29,
+    STEAL_RADIUS         = 20,
+    STEAL_DURATION       = 1.3,
+    DEFAULT_GRAVITY      = 196.2,
+    GalaxyGravityPercent = 70,
+    HOP_POWER            = 35,
+    HOP_COOLDOWN         = 0.08,
+    BatAimbotSpeed       = 55,
+}
+
+local KEYBINDS = {
+    SPEED     = Enum.KeyCode.V,
+    FLOAT     = Enum.KeyCode.F,
+    AUTORIGHT = Enum.KeyCode.E,
+    AUTOLEFT  = Enum.KeyCode.Q,
+    BATAIMBOT = Enum.KeyCode.X,
+}
+
+local Connections   = {}
+local isStealing    = false
+local lastBatSwing  = 0
+local BAT_SWING_COOLDOWN = 0.12
+
+-- Config System
+local CONFIG_KEY = "RICKS_DUEL_CONFIG_V1"
+local floatButtonPositions = {}
+local floatButtonReferences = {}
+
+-- Forward declarations for startup/reset logic
+local startSpeedBoost, stopSpeedBoost
+local startFloat, stopFloat
+local startSpamBat, stopSpamBat
+local startHelicopter, stopHelicopter
+local startHitCircle, stopHitCircle
+local startBatAimbot, stopBatAimbot
+local startInfiniteJump, stopInfiniteJump
+local startAutoSteal, stopAutoSteal
+local startUnwalk, stopUnwalk
+local enablePurpleMoon, disablePurpleMoon
+local startAntiRagdoll, stopAntiRagdoll
+local enableOptimizer, disableOptimizer
+local enableXRay, disableXRay
+local startGalaxyMode, stopGalaxyMode
+local startSpeedWhileStealing, stopSpeedWhileStealing
+local startStealPath, stopStealPath
+
+local function saveConfig()
+    local configData = {
+        enabled = Enabled,
+        values = Values,
+        floatPositions = floatButtonPositions,
+    }
+    pcall(function()
+        if writefile then
+            writefile(CONFIG_KEY .. ".json", HttpService:JSONEncode(configData))
+        end
+    end)
+    pcall(function()
+        if setgenv then
+            getgenv()[CONFIG_KEY] = configData
+        end
+    end)
+end
+
+local function loadConfig()
+    local configData = nil
+    pcall(function()
+        if getgenv and getgenv()[CONFIG_KEY] then
+            configData = getgenv()[CONFIG_KEY]
+        end
+    end)
+    if not configData then
+        pcall(function()
+            if readfile then
+                local json = readfile(CONFIG_KEY .. ".json")
+                configData = HttpService:JSONDecode(json)
+            end
+        end)
+    end
+    if configData then
+        Enabled = configData.enabled or Enabled
+        Values = configData.values or Values
+        floatButtonPositions = configData.floatPositions or {}
+    end
+end
+
+loadConfig()
+
+-- ============================================================
+-- FIXED SAFE CONFIG LOGIC (Boot Effect)
+-- ============================================================
+local VisualSetters = {}
+
+local function applyBootEffect()
+    task.spawn(function()
+        local savedEnabled = {}
+        for key, value in pairs(Enabled) do
+            savedEnabled[key] = value
+        end
+
+        -- SHUTDOWN EVERYTHING
+        stopSpeedBoost()
+        stopFloat()
+        stopSpamBat()
+        stopHelicopter()
+        stopHitCircle()
+        stopBatAimbot()
+        stopInfiniteJump()
+        stopAutoSteal()
+        stopUnwalk()
+        disablePurpleMoon()
+        stopAntiRagdoll()
+        disableOptimizer()
+        disableXRay()
+        stopGalaxyMode()
+        stopSpeedWhileStealing()
+        stopStealPath()
+
+        -- Reset Visuals to OFF
+        for key, setterFunc in pairs(VisualSetters) do
+            pcall(function() setterFunc(false, true) end)
+        end
+        for key, updateFunc in pairs(floatButtonReferences) do
+            pcall(function() updateFunc(false) end)
+        end
+
+        task.wait(2)
+
+        -- RESTORE EVERYTHING
+        for key, value in pairs(savedEnabled) do
+            Enabled[key] = value
+            if value == true then
+                if key == "SpeedBoost" then startSpeedBoost() end
+                if key == "Float" then startFloat() end
+                if key == "SpamBat" then startSpamBat() end
+                if key == "Helicopter" then startHelicopter() end
+                if key == "HitCircle" then startHitCircle() end
+                if key == "BatAimbot" then startBatAimbot() end
+                if key == "InfiniteJump" then startInfiniteJump() end
+                if key == "AutoSteal" then startAutoSteal() end
+                if key == "Unwalk" then startUnwalk() end
+                if key == "Vibrance" then enablePurpleMoon() end
+                if key == "AntiRagdoll" then startAntiRagdoll() end
+                if key == "OptimizerXRay" then enableOptimizer() enableXRay() end
+                if key == "GalaxyMode" then startGalaxyMode() end
+                if key == "SpeedWhileStealing" then startSpeedWhileStealing() end
+
+                -- Update Visuals to ON
+                if VisualSetters[key] then VisualSetters[key](true, true) end
+                if floatButtonReferences[key] then floatButtonReferences[key](true) end
+            end
+        end
+    end)
+end
+
+-- ============================================================
+-- HELPERS
+-- ============================================================
+local function getMovementDirection()
+    local c = Player.Character
+    if not c then return Vector3.zero end
+    local hum = c:FindFirstChildOfClass("Humanoid")
+    return hum and hum.MoveDirection or Vector3.zero
+end
+
+local SlapList = {
+    {1,"Bat"},{2,"Slap"},{3,"Iron Slap"},{4,"Gold Slap"},
+    {5,"Diamond Slap"},{6,"Emerald Slap"},{7,"Ruby Slap"},
+    {8,"Dark Matter Slap"},{9,"Flame Slap"},{10,"Nuclear Slap"},
+    {11,"Galaxy Slap"},{12,"Glitched Slap"}
+}
+
+local function findBat()
+    local c = Player.Character
+    if not c then return nil end
+    local bp = Player:FindFirstChildOfClass("Backpack")
+    for _, ch in ipairs(c:GetChildren()) do
+        if ch:IsA("Tool") and ch.Name:lower():find("bat") then return ch end
+    end
+    if bp then
+        for _, ch in ipairs(bp:GetChildren()) do
+            if ch:IsA("Tool") and ch.Name:lower():find("bat") then return ch end
+        end
+    end
+    for _, i in ipairs(SlapList) do
+        local t = c:FindFirstChild(i[2]) or (bp and bp:FindFirstChild(i[2]))
+        if t then return t end
+    end
+    return nil
+end
+
+-- ============================================================
+-- FEATURE LOGIC
+-- ============================================================
+
+-- Speed Boost
+function startSpeedBoost()
+    if Connections.speed then return end
+    Connections.speed = RunService.Heartbeat:Connect(function()
+        if not Enabled.SpeedBoost then return end
+        pcall(function()
+            local c = Player.Character
+            if not c then return end
+            local h = c:FindFirstChild("HumanoidRootPart")
+            if not h then return end
+            local md = getMovementDirection()
+            if md.Magnitude > 0.1 then
+                h.AssemblyLinearVelocity = Vector3.new(md.X * Values.BoostSpeed, h.AssemblyLinearVelocity.Y, md.Z * Values.BoostSpeed)
+            end
+        end)
+    end)
+end
+function stopSpeedBoost()
+    if Connections.speed then Connections.speed:Disconnect() Connections.speed = nil end
+end
+
+-- Speed While Stealing
+function startSpeedWhileStealing()
+    if Connections.speedWhileStealing then return end
+    Connections.speedWhileStealing = RunService.Heartbeat:Connect(function()
+        if not Enabled.SpeedWhileStealing or not Player:GetAttribute("Stealing") then return end
+        local c = Player.Character
+        if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart")
+        if not h then return end
+        local md = getMovementDirection()
+        if md.Magnitude > 0.1 then
+            h.AssemblyLinearVelocity = Vector3.new(md.X * Values.StealingSpeedValue, h.AssemblyLinearVelocity.Y, md.Z * Values.StealingSpeedValue)
+        end
+    end)
+end
+function stopSpeedWhileStealing()
+    if Connections.speedWhileStealing then Connections.speedWhileStealing:Disconnect() Connections.speedWhileStealing = nil end
+end
+
+-- Anti Ragdoll (v2)
+local antiRagdollMode = nil
+local ragdollConnections = {}
+local cachedCharData = {}
+local isBoosting = false
+local AR_BOOST_SPEED = 400
+local AR_DEFAULT_SPEED = 16
+
+local function arCacheCharacterData()
+    local char = Player.Character
+    if not char then return false end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not hum or not root then return false end
+    cachedCharData = { character = char, humanoid = hum, root = root }
+    return true
+end
+
+local function arDisconnectAll()
+    for _, conn in ipairs(ragdollConnections) do
+        pcall(function() conn:Disconnect() end)
+    end
+    ragdollConnections = {}
+end
+
+local function arIsRagdolled()
+    if not cachedCharData.humanoid then return false end
+    local state = cachedCharData.humanoid:GetState()
+    if state == Enum.HumanoidStateType.Physics or
+       state == Enum.HumanoidStateType.Ragdoll or
+       state == Enum.HumanoidStateType.FallingDown then return true end
+    local endTime = Player:GetAttribute("RagdollEndTime")
+    if endTime and (endTime - workspace:GetServerTimeNow()) > 0 then return true end
+    return false
+end
+
+local function arForceExit()
+    if not cachedCharData.humanoid or not cachedCharData.root then return end
+    pcall(function()
+        Player:SetAttribute("RagdollEndTime", workspace:GetServerTimeNow())
+    end)
+    for _, d in ipairs(cachedCharData.character:GetDescendants()) do
+        if d:IsA("BallSocketConstraint") or (d:IsA("Attachment") and d.Name:find("RagdollAttachment")) then
+            d:Destroy()
+        end
+    end
+    if not isBoosting then
+        isBoosting = true
+        cachedCharData.humanoid.WalkSpeed = AR_BOOST_SPEED
+    end
+    if cachedCharData.humanoid.Health > 0 then
+        cachedCharData.humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    end
+    cachedCharData.root.Anchored = false
+end
+
+local function arHeartbeatLoop()
+    while antiRagdollMode == "v1" do
+        task.wait()
+        if not Enabled.AntiRagdoll then break end
+        local ragdolled = arIsRagdolled()
+        if ragdolled then
+            arForceExit()
+        elseif isBoosting and not ragdolled then
+            isBoosting = false
+            if cachedCharData.humanoid then
+                cachedCharData.humanoid.WalkSpeed = AR_DEFAULT_SPEED
+            end
+        end
+    end
+end
+
+function startAntiRagdoll()
+    if antiRagdollMode == "v1" then return end
+    if not arCacheCharacterData() then return end
+    antiRagdollMode = "v1"
+    local camConn = RunService.RenderStepped:Connect(function()
+        local cam = workspace.CurrentCamera
+        if cam and cachedCharData.humanoid then
+            cam.CameraSubject = cachedCharData.humanoid
+        end
+    end)
+    table.insert(ragdollConnections, camConn)
+    local respawnConn = Player.CharacterAdded:Connect(function()
+        isBoosting = false
+        task.wait(0.5)
+        arCacheCharacterData()
+    end)
+    table.insert(ragdollConnections, respawnConn)
+    task.spawn(arHeartbeatLoop)
+end
+
+function stopAntiRagdoll()
+    antiRagdollMode = nil
+    if isBoosting and cachedCharData.humanoid then
+        cachedCharData.humanoid.WalkSpeed = AR_DEFAULT_SPEED
+    end
+    isBoosting = false
+    arDisconnectAll()
+    cachedCharData = {}
+end
+
+-- Spam Bat
+function startSpamBat()
+    if Connections.spamBat then return end
+    Connections.spamBat = RunService.Heartbeat:Connect(function()
+        if not Enabled.SpamBat then return end
+        local c = Player.Character
+        if not c then return end
+        local bat = findBat()
+        if not bat then return end
+        if bat.Parent ~= c then bat.Parent = c end
+        local now = tick()
+        if now - lastBatSwing < BAT_SWING_COOLDOWN then return end
+        lastBatSwing = now
+        pcall(function() bat:Activate() end)
+    end)
+end
+function stopSpamBat()
+    if Connections.spamBat then Connections.spamBat:Disconnect() Connections.spamBat = nil end
+end
+
+-- Helicopter
+local helicopterBAV = nil
+function startHelicopter()
+    local c = Player.Character
+    if not c then return end
+    local hrp = c:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    if helicopterBAV then helicopterBAV:Destroy() helicopterBAV = nil end
+    helicopterBAV = Instance.new("BodyAngularVelocity")
+    helicopterBAV.Name = "HelicopterBAV"
+    helicopterBAV.MaxTorque = Vector3.new(0, math.huge, 0)
+    helicopterBAV.AngularVelocity = Vector3.new(0, Values.SpinSpeed, 0)
+    helicopterBAV.Parent = hrp
+end
+function stopHelicopter()
+    if helicopterBAV then helicopterBAV:Destroy() helicopterBAV = nil end
+    local c = Player.Character
+    if c then
+        local hrp = c:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            for _, v in pairs(hrp:GetChildren()) do
+                if v.Name == "HelicopterBAV" then v:Destroy() end
+            end
+        end
+    end
+end
+
+-- Float
+local floatConn = nil
+local FLOAT_TARGET_HEIGHT = 10
+function startFloat()
+    if floatConn then return end
+    local c = Player.Character
+    if not c then return end
+    local hrp = c:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local floatOriginY = hrp.Position.Y + FLOAT_TARGET_HEIGHT
+    local floatStartTime = tick()
+    local floatDescending = false
+    floatConn = RunService.Heartbeat:Connect(function()
+        if not Enabled.Float then return end
+        local c2 = Player.Character
+        if not c2 then return end
+        local h = c2:FindFirstChild("HumanoidRootPart")
+        if not h then return end
+        local hum2 = c2:FindFirstChildOfClass("Humanoid")
+        if tick() - floatStartTime >= 4 then floatDescending = true end
+        local currentY = h.Position.Y
+        local vertVel
+        if floatDescending then
+            vertVel = -20
+            if currentY <= floatOriginY - FLOAT_TARGET_HEIGHT + 0.5 then
+                h.AssemblyLinearVelocity = Vector3.zero
+                Enabled.Float = false
+                if floatConn then floatConn:Disconnect() floatConn = nil end
+                return
+            end
+        else
+            local diff = floatOriginY - currentY
+            if diff > 0.3 then vertVel = math.clamp(diff * 8, 5, 50)
+            elseif diff < -0.3 then vertVel = math.clamp(diff * 8, -50, -5)
+            else vertVel = 0 end
+        end
+        -- Keep horizontal velocity unchanged (normal walking speed)
+        local horizX = h.AssemblyLinearVelocity.X
+        local horizZ = h.AssemblyLinearVelocity.Z
+        h.AssemblyLinearVelocity = Vector3.new(horizX, vertVel, horizZ)
+    end)
+end
+function stopFloat()
+    if floatConn then floatConn:Disconnect() floatConn = nil end
+    local c = Player.Character
+    if c then
+        local hrp = c:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.AssemblyLinearVelocity = Vector3.zero end
+    end
+end
+
+-- Unwalk
+local savedAnimations = {}
+function startUnwalk()
+    local c = Player.Character
+    if not c then return end
+    local hum = c:FindFirstChildOfClass("Humanoid")
+    if hum then for _, t in ipairs(hum:GetPlayingAnimationTracks()) do t:Stop() end end
+    local anim = c:FindFirstChild("Animate")
+    if anim then savedAnimations.Animate = anim:Clone() anim:Destroy() end
+end
+function stopUnwalk()
+    local c = Player.Character
+    if c and savedAnimations.Animate then
+        savedAnimations.Animate:Clone().Parent = c
+        savedAnimations.Animate = nil
+    end
+end
+
+-- Hit Circle (Melee Aimbot)
+local Cebo = { Conn = nil, Circle = nil, Align = nil, Attach = nil }
+function startHitCircle()
+    if Cebo.Conn then return end
+    local char = Player.Character or Player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    Cebo.Attach = Instance.new("Attachment", hrp)
+    Cebo.Align = Instance.new("AlignOrientation", hrp)
+    Cebo.Align.Attachment0 = Cebo.Attach
+    Cebo.Align.Mode = Enum.OrientationAlignmentMode.OneAttachment
+    Cebo.Align.RigidityEnabled = true
+    Cebo.Circle = Instance.new("Part")
+    Cebo.Circle.Shape = Enum.PartType.Cylinder
+    Cebo.Circle.Material = Enum.Material.Neon
+    Cebo.Circle.Size = Vector3.new(0.05, 14.5, 14.5)
+    Cebo.Circle.Color = Color3.fromRGB(120, 120, 120)
+    Cebo.Circle.CanCollide = false
+    Cebo.Circle.Massless = true
+    Cebo.Circle.Parent = workspace
+    local weld = Instance.new("Weld")
+    weld.Part0 = hrp
+    weld.Part1 = Cebo.Circle
+    weld.C0 = CFrame.new(0, -1, 0) * CFrame.Angles(0, 0, math.rad(90))
+    weld.Parent = Cebo.Circle
+    Cebo.Conn = RunService.RenderStepped:Connect(function()
+        if not Enabled.HitCircle then return end
+        local target, dmin = nil, 7.25
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local d = (p.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+                if d <= dmin then target, dmin = p.Character.HumanoidRootPart, d end
+            end
+        end
+        if target then
+            char.Humanoid.AutoRotate = false
+            Cebo.Align.Enabled = true
+            Cebo.Align.CFrame = CFrame.lookAt(hrp.Position, Vector3.new(target.Position.X, hrp.Position.Y, target.Position.Z))
+            local t = char:FindFirstChild("Bat") or char:FindFirstChild("Medusa")
+            if t then t:Activate() end
+        else
+            Cebo.Align.Enabled = false
+            char.Humanoid.AutoRotate = true
+        end
+    end)
+end
+function stopHitCircle()
+    if Cebo.Conn   then Cebo.Conn:Disconnect()   Cebo.Conn   = nil end
+    if Cebo.Circle then Cebo.Circle:Destroy()     Cebo.Circle = nil end
+    if Cebo.Align  then Cebo.Align:Destroy()      Cebo.Align  = nil end
+    if Cebo.Attach then Cebo.Attach:Destroy()     Cebo.Attach = nil end
+    if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+        Player.Character.Humanoid.AutoRotate = true
+    end
+end
+
+-- Bat Aimbot
+local function findNearestEnemy(myHRP)
+    local nearest, nearestDist, nearestTorso = nil, math.huge, nil
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= Player and p.Character then
+            local eh  = p.Character:FindFirstChild("HumanoidRootPart")
+            local torso = p.Character:FindFirstChild("UpperTorso") or p.Character:FindFirstChild("Torso")
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if eh and hum and hum.Health > 0 then
+                local d = (eh.Position - myHRP.Position).Magnitude
+                if d < nearestDist then
+                    nearestDist = d
+                    nearest     = eh
+                    nearestTorso = torso or eh
+                end
+            end
+        end
+    end
+    return nearest, nearestDist, nearestTorso
+end
+
+function startBatAimbot()
+    if Connections.batAimbot then return end
+    Connections.batAimbot = RunService.Heartbeat:Connect(function()
+        if not Enabled.BatAimbot then return end
+        local c = Player.Character
+        if not c then return end
+        local h   = c:FindFirstChild("HumanoidRootPart")
+        local hum = c:FindFirstChildOfClass("Humanoid")
+        if not h or not hum then return end
+        local bat = findBat()
+        if bat and bat.Parent ~= c then
+            pcall(function() hum:EquipTool(bat) end)
+        end
+        local target, _, torso = findNearestEnemy(h)
+        if target and torso then
+            local dir     = torso.Position - h.Position
+            local flatDir = Vector3.new(dir.X, 0, dir.Z)
+            local flatDist = flatDir.Magnitude
+            local spd = Values.BatAimbotSpeed
+            if flatDist > 1.5 then
+                local moveDir = flatDir.Unit
+                h.AssemblyLinearVelocity = Vector3.new(moveDir.X * spd, h.AssemblyLinearVelocity.Y, moveDir.Z * spd)
+            else
+                local tv = target.AssemblyLinearVelocity
+                h.AssemblyLinearVelocity = Vector3.new(tv.X, h.AssemblyLinearVelocity.Y, tv.Z)
+            end
+        end
+    end)
+end
+function stopBatAimbot()
+    if Connections.batAimbot then
+        Connections.batAimbot:Disconnect()
+        Connections.batAimbot = nil
+    end
+end
+
+-- Galaxy Mode
+local galaxyModeEnabled = false
+local galaxyHopsEnabled = false
+local galaxyLastHopTime = 0
+local galaxySpaceHeld   = false
+local galaxyOriginalJump = 50
+local galaxyVectorForce = nil
+local galaxyAttachment  = nil
+
+local function galaxyCaptureJumpPower()
+    local c = Player.Character
+    if c then
+        local hum = c:FindFirstChildOfClass("Humanoid")
+        if hum and hum.JumpPower > 0 then galaxyOriginalJump = hum.JumpPower end
+    end
+end
+task.spawn(function() task.wait(1) galaxyCaptureJumpPower() end)
+Player.CharacterAdded:Connect(function() task.wait(1) galaxyCaptureJumpPower() end)
+
+local function galaxySetupForce()
+    pcall(function()
+        local c = Player.Character
+        if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart")
+        if not h then return end
+        if galaxyVectorForce then galaxyVectorForce:Destroy() end
+        if galaxyAttachment  then galaxyAttachment:Destroy()  end
+        galaxyAttachment = Instance.new("Attachment")
+        galaxyAttachment.Parent = h
+        galaxyVectorForce = Instance.new("VectorForce")
+        galaxyVectorForce.Attachment0 = galaxyAttachment
+        galaxyVectorForce.ApplyAtCenterOfMass = true
+        galaxyVectorForce.RelativeTo = Enum.ActuatorRelativeTo.World
+        galaxyVectorForce.Force = Vector3.zero
+        galaxyVectorForce.Parent = h
+    end)
+end
+local function galaxyUpdateForce()
+    if not galaxyModeEnabled or not galaxyVectorForce then return end
+    local c = Player.Character
+    if not c then return end
+    local mass = 0
+    for _, p in ipairs(c:GetDescendants()) do
+        if p:IsA("BasePart") then mass += p:GetMass() end
+    end
+    local tg = Values.DEFAULT_GRAVITY * (Values.GalaxyGravityPercent / 100)
+    galaxyVectorForce.Force = Vector3.new(0, mass * (Values.DEFAULT_GRAVITY - tg) * 0.95, 0)
+end
+function galaxyAdjustJump()
+    pcall(function()
+        local c = Player.Character
+        if not c then return end
+        local hum = c:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        if not galaxyModeEnabled then hum.JumpPower = galaxyOriginalJump return end
+        local ratio = math.sqrt((Values.DEFAULT_GRAVITY * (Values.GalaxyGravityPercent / 100)) / Values.DEFAULT_GRAVITY)
+        hum.JumpPower = galaxyOriginalJump * ratio
+    end)
+end
+local function galaxyDoMiniHop()
+    if not galaxyHopsEnabled then return end
+    pcall(function()
+        local c = Player.Character
+        if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart")
+        local hum = c:FindFirstChildOfClass("Humanoid")
+        if not h or not hum then return end
+        if tick() - galaxyLastHopTime < Values.HOP_COOLDOWN then return end
+        galaxyLastHopTime = tick()
+        if hum.FloorMaterial == Enum.Material.Air then
+            h.AssemblyLinearVelocity = Vector3.new(h.AssemblyLinearVelocity.X, Values.HOP_POWER, h.AssemblyLinearVelocity.Z)
+        end
+    end)
+end
+function startGalaxyMode()
+    galaxyModeEnabled = true
+    galaxyHopsEnabled = true
+    galaxySetupForce()
+    galaxyAdjustJump()
+end
+function stopGalaxyMode()
+    galaxyModeEnabled = false
+    galaxyHopsEnabled = false
+    if galaxyVectorForce then galaxyVectorForce:Destroy() galaxyVectorForce = nil end
+    if galaxyAttachment  then galaxyAttachment:Destroy()  galaxyAttachment  = nil end
+    galaxyAdjustJump()
+end
+
+RunService.Heartbeat:Connect(function()
+    if galaxyHopsEnabled and galaxySpaceHeld then galaxyDoMiniHop() end
+    if galaxyModeEnabled then galaxyUpdateForce() end
+end)
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.Space then galaxySpaceHeld = true end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Space then galaxySpaceHeld = false end
+end)
+Player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if galaxyModeEnabled then galaxySetupForce() galaxyAdjustJump() end
+end)
+
+-- Infinite Jump
+local jumpConn = nil
+local BOOST_POWER = 50
+
+function startInfiniteJump()
+    if jumpConn then return end
+    jumpConn = UserInputService.JumpRequest:Connect(function()
+        local character = Player.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+
+        if rootPart then
+            local currentVel = rootPart.AssemblyLinearVelocity
+            rootPart.AssemblyLinearVelocity = Vector3.new(currentVel.X, 0, currentVel.Z)
+            rootPart.AssemblyLinearVelocity = rootPart.AssemblyLinearVelocity + Vector3.new(0, BOOST_POWER, 0)
+        end
+    end)
+end
+
+function stopInfiniteJump()
+    if jumpConn then
+        jumpConn:Disconnect()
+        jumpConn = nil
+    end
+end
+
+-- Optimizer + XRay
+local originalTransparency = {}
+function enableOptimizer()
+    if getgenv and getgenv().OPTIMIZER_ACTIVE then return end
+    if getgenv then getgenv().OPTIMIZER_ACTIVE = true end
+    pcall(function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        Lighting.GlobalShadows = false
+        Lighting.Brightness = 3
+        Lighting.FogEnd = 9e9
+    end)
+    pcall(function()
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            pcall(function()
+                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then
+                    obj:Destroy()
+                elseif obj:IsA("BasePart") then
+                    obj.CastShadow = false
+                    obj.Material = Enum.Material.Plastic
+                end
+            end)
+        end
+    end)
+end
+function disableOptimizer()
+    if getgenv then getgenv().OPTIMIZER_ACTIVE = false end
+end
+function enableXRay()
+    pcall(function()
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and obj.Anchored and
+               (obj.Name:lower():find("base") or (obj.Parent and obj.Parent.Name:lower():find("base"))) then
+                originalTransparency[obj] = obj.LocalTransparencyModifier
+                obj.LocalTransparencyModifier = 0.85
+            end
+        end
+    end)
+end
+function disableXRay()
+    for part, value in pairs(originalTransparency) do
+        if part then part.LocalTransparencyModifier = value end
+    end
+    originalTransparency = {}
+end
+
+-- Grey Moon (formerly Purple Moon)
+local greyMoonCC       = nil
+local greyMoonBloom    = nil
+local greyMoonConn     = nil
+local greyMoonSky      = nil
+local greyMoonFOV      = nil
+local greyMoonBall     = nil
+
+function enablePurpleMoon()
+    if greyMoonCC then return end
+    greyMoonCC = Instance.new("ColorCorrectionEffect")
+    greyMoonCC.TintColor = Color3.fromRGB(80, 80, 80)
+    greyMoonCC.Saturation = 0.2
+    greyMoonCC.Contrast   = 0.05
+    greyMoonCC.Brightness = 0.02
+    greyMoonCC.Parent = Lighting
+
+    greyMoonBloom = Instance.new("BloomEffect")
+    greyMoonBloom.Intensity  = 0.6
+    greyMoonBloom.Size       = 16
+    greyMoonBloom.Threshold  = 0.8
+    greyMoonBloom.Parent = Lighting
+
+    Lighting.ExposureCompensation = 0.1
+    Lighting.Ambient = Color3.fromRGB(30, 30, 30)
+    Lighting.OutdoorAmbient = Color3.fromRGB(45, 45, 45)
+
+    greyMoonBall = Instance.new("Part")
+    greyMoonBall.Name         = "GreyMoon"
+    greyMoonBall.Anchored     = true
+    greyMoonBall.CanCollide   = false
+    greyMoonBall.CastShadow   = false
+    greyMoonBall.Massless     = true
+    greyMoonBall.Material     = Enum.Material.Neon
+    greyMoonBall.Shape        = Enum.PartType.Ball
+    greyMoonBall.Color        = Color3.fromRGB(100, 100, 100)
+    greyMoonBall.Size         = Vector3.new(60, 60, 60)
+    greyMoonBall.Position     = Vector3.new(0, 800, -500)
+    greyMoonBall.Parent       = workspace
+
+    greyMoonFOV = Instance.new("ImageLabel")
+    greyMoonFOV.Name               = "GreyMoonFOV"
+    greyMoonFOV.Size               = UDim2.new(1, 0, 1, 0)
+    greyMoonFOV.Position           = UDim2.new(0, 0, 0, 0)
+    greyMoonFOV.BackgroundTransparency = 1
+    greyMoonFOV.Image              = "rbxassetid://6923796549"
+    greyMoonFOV.ImageColor3        = Color3.fromRGB(100, 100, 100)
+    greyMoonFOV.ImageTransparency  = 0.55
+    greyMoonFOV.ZIndex             = 1
+    greyMoonFOV.Parent             = ScreenGui
+
+    greyMoonConn = RunService.Heartbeat:Connect(function()
+        if not Enabled.Vibrance then return end
+        local t = tick()
+        local pulse = math.sin(t * 0.9) * 0.05
+        if greyMoonCC then
+            greyMoonCC.Saturation = 0.2 + pulse
+            greyMoonCC.Brightness = 0.02 + pulse * 0.2
+        end
+        if greyMoonBloom then
+            greyMoonBloom.Intensity = 0.6 + math.sin(t * 1.3) * 0.2
+        end
+        if greyMoonFOV then
+            greyMoonFOV.ImageTransparency = 0.55 + math.sin(t * 0.7) * 0.04
+        end
+        if greyMoonBall then
+            greyMoonBall.Color = Color3.fromRGB(
+                math.floor(100 + math.sin(t * 0.5) * 20),
+                math.floor(100 + math.sin(t * 0.8) * 15),
+                math.floor(100 + math.sin(t * 0.6) * 10)
+            )
+        end
+    end)
+end
+
+function disablePurpleMoon()
+    if greyMoonConn  then greyMoonConn:Disconnect()    greyMoonConn  = nil end
+    if greyMoonBloom then greyMoonBloom:Destroy()       greyMoonBloom = nil end
+    if greyMoonCC    then greyMoonCC:Destroy()          greyMoonCC    = nil end
+    if greyMoonBall  then greyMoonBall:Destroy()        greyMoonBall  = nil end
+    if greyMoonFOV   then greyMoonFOV:Destroy()         greyMoonFOV   = nil end
+    Lighting.ExposureCompensation = 0
+    Lighting.Ambient = Color3.fromRGB(70, 70, 70)
+    Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+end
+
+-- Teleport Functions
+local function teleportToPositions(pos1, pos2)
+    local c = Player.Character
+    if not c then return end
+    local hrp = c:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    -- Teleport to first position
+    hrp.CFrame = CFrame.new(pos1)
+    task.wait(0.1)
+
+    -- Teleport to second position
+    hrp.CFrame = CFrame.new(pos2)
+end
+
+function teleportLeft()
+    teleportToPositions(Vector3.new(-474.15, -7.09, 95.27), Vector3.new(-483.20, -5.13, 96.17))
+end
+
+function teleportRight()
+    teleportToPositions(Vector3.new(-474.87, -7.09, 24.62), Vector3.new(-482.25, -5.13, 24.59))
+end
+
+-- =============================================
+-- AUTO STEAL (INSTA GRAB) - Standalone Version
+-- Works with any executor
+-- =============================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Player = Players.LocalPlayer
+
+local AutoGrabConfig = {
+    AutoGrabEnabled = false,
+    AutoGrabRadius  = 35,   -- You can change this
+}
+
+local AutoGrabConnection  = nil
+local AutoGrabScanThread  = nil
+local SpamToggleThread    = nil
+local CachedGrabbables    = {}
+local GRAB_COOLDOWN       = 0.01
+local lastGrabTick        = 0
+
+-- Check if it's your own base (so we don't steal from ourselves)
+local function isMyBase(plotName)
+    local plots = workspace:FindFirstChild("Plots")
+    if not plots then return false end
+    local plot = plots:FindFirstChild(plotName)
+    if not plot then return false end
+    local sign = plot:FindFirstChild("PlotSign")
+    if sign then
+        local yourBase = sign:FindFirstChild("YourBase")
+        if yourBase and yourBase:IsA("BillboardGui") then
+            return yourBase.Enabled == true
+        end
+    end
+    return false
+end
+
+-- Scan all grabbable items/prompts
+local function ScanGrabbables()
+    local results = {}
+
+    -- Scan Plots (other players' bases)
+    local plots = workspace:FindFirstChild("Plots")
+    if plots then
+        for _, plot in ipairs(plots:GetChildren()) do
+            if plot:IsA("Model") and not isMyBase(plot.Name) then
+                -- Animal Podiums
+                local podiums = plot:FindFirstChild("AnimalPodiums")
+                if podiums then
+                    for _, podium in ipairs(podiums:GetChildren()) do
+                        if podium:IsA("Model") then
+                            local base   = podium:FindFirstChild("Base")
+                            local spawn  = base and base:FindFirstChild("Spawn")
+                            local attach = spawn and spawn:FindFirstChild("PromptAttachment")
+                            if attach then
+                                for _, p in ipairs(attach:GetChildren()) do
+                                    if p:IsA("ProximityPrompt") then
+                                        table.insert(results, { type="prompt", prompt=p, part=base or podium })
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+
+                -- Tools in plot
+                for _, item in ipairs(plot:GetChildren()) do
+                    if item:IsA("Tool") then
+                        local handle = item:FindFirstChild("Handle") or item:FindFirstChildWhichIsA("BasePart")
+                        if handle then
+                            table.insert(results, { type="tool", tool=item, part=handle })
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Scan global drop folders
+    for _, folderName in ipairs({"Debris","Drops","Collectibles","DroppedItems"}) do
+        local folder = workspace:FindFirstChild(folderName)
+        if folder then
+            for _, desc in ipairs(folder:GetDescendants()) do
+                if desc:IsA("ProximityPrompt") then
+                    table.insert(results, { type="prompt", prompt=desc, part=desc.Parent })
+                elseif desc:IsA("Tool") then
+                    local handle = desc:FindFirstChild("Handle") or desc:FindFirstChildWhichIsA("BasePart")
+                    if handle then
+                        table.insert(results, { type="tool", tool=desc, part=handle })
+                    end
+                end
+            end
+        end
+    end
+
+    -- Loose tools in workspace
+    for _, item in ipairs(workspace:GetChildren()) do
+        if item:IsA("Tool") then
+            local handle = item:FindFirstChild("Handle") or item:FindFirstChildWhichIsA("BasePart")
+            if handle then
+                table.insert(results, { type="tool", tool=item, part=handle })
+            end
+        end
+    end
+
+    CachedGrabbables = results
+end
+
+local function StartScan()
+    if AutoGrabScanThread then return end
+    AutoGrabScanThread = task.spawn(function()
+        while AutoGrabConfig.AutoGrabEnabled do
+            pcall(ScanGrabbables)
+            task.wait(0.01)
+        end
+    end)
+end
+
+local function TryGrab(item, humanoid)
+    if item.type == "prompt" then
+        pcall(function()
+            fireproximityprompt(item.prompt)
+        end)
+        pcall(function()
+            item.prompt:InputHoldBegin()
+            task.delay(0, function()
+                if item.prompt and item.prompt.Parent then
+                    item.prompt:InputHoldEnd()
+                end
+            end)
+        end)
+    elseif item.type == "tool" then
+        pcall(function()
+            humanoid:EquipTool(item.tool)
+        end)
+    end
+end
+
+local function RunGrabLoop()
+    if AutoGrabConnection then AutoGrabConnection:Disconnect() end
+
+    AutoGrabConnection = RunService.Heartbeat:Connect(function()
+        if not AutoGrabConfig.AutoGrabEnabled then return end
+
+        local character = Player.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if not rootPart or not humanoid then return end
+
+        local now = tick()
+        if now - lastGrabTick < GRAB_COOLDOWN then return end
+
+        local myPos    = rootPart.Position
+        local radius   = AutoGrabConfig.AutoGrabRadius
+        local bestDist = radius + 1
+        local bestItem = nil
+
+        for _, item in ipairs(CachedGrabbables) do
+            if item.part and item.part.Parent then
+                local success, pos = pcall(function()
+                    return item.part:IsA("BasePart") and item.part.Position or item.part:GetPivot().Position
+                end)
+                if success and pos then
+                    local dist = (pos - myPos).Magnitude
+                    if dist < bestDist then
+                        if (item.type == "prompt" and item.prompt and item.prompt.Parent and item.prompt.Enabled) or
+                           (item.type == "tool" and item.tool and item.tool.Parent) then
+                            bestDist = dist
+                            bestItem = item
+                        end
+                    end
+                end
+            end
+        end
+
+        if bestItem then
+            lastGrabTick = now
+            TryGrab(bestItem, humanoid)
+        end
+    end)
+end
+
+local function StartSpamToggle()
+    if SpamToggleThread then return end
+    SpamToggleThread = task.spawn(function()
+        while AutoGrabConfig.AutoGrabEnabled do
+            RunGrabLoop()
+            task.wait(0.015)
+            if AutoGrabConnection then
+                AutoGrabConnection:Disconnect()
+                AutoGrabConnection = nil
+            end
+            task.wait(0.005)
+        end
+    end)
+end
+
+local function StopAll()
+    AutoGrabConfig.AutoGrabEnabled = false
+
+    if SpamToggleThread then
+        task.cancel(SpamToggleThread)
+        SpamToggleThread = nil
+    end
+    if AutoGrabConnection then
+        AutoGrabConnection:Disconnect()
+        AutoGrabConnection = nil
+    end
+    if AutoGrabScanThread then
+        task.cancel(AutoGrabScanThread)
+        AutoGrabScanThread = nil
+    end
+
+    CachedGrabbables = {}
+end
+
+-- Steal Paths
+local stealPathActive = false
+local stealLastFlatVel = Vector3.zero
+local STEAL_PATH_VELOCITY_SPEED  = 59.2
+local STEAL_PATH_SECOND_SPEED    = 29.6
+local STEAL_PATH_BASE_STOP       = 1.35
+local STEAL_PATH_MIN_STOP        = 0.65
+local STEAL_PATH_NEXT_POINT_BIAS = 0.45
+local STEAL_PATH_SMOOTH_FACTOR   = 0.12
+
+local stealPath_Right = {
+    {pos = Vector3.new(-470.6, -5.9, 34.4)},
+    {pos = Vector3.new(-484.2, -3.9, 21.4)},
+    {pos = Vector3.new(-475.6, -5.8, 29.3)},
+    {pos = Vector3.new(-474.24, -7.09, 93.00)},
+    {pos = Vector3.new(-482.57, -5.13, 94.51)}
+}
+local stealPath_Left = {
+    {pos = Vector3.new(-474.7, -5.9, 91.0)},
+    {pos = Vector3.new(-483.4, -3.9, 97.3)},
+    {pos = Vector3.new(-474.7, -5.9, 91.0)},
+    {pos = Vector3.new(-472.31, -7.09, 26.70)},
+    {pos = Vector3.new(-482.74, -5.13, 24.12)}
+}
+
+local function stealMoveToPoint(hrp, current, nextPoint, speed)
+    local conn
+    conn = RunService.Heartbeat:Connect(function()
+        if not stealPathActive then
+            conn:Disconnect()
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            return
+        end
+        local pos = hrp.Position
+        local target = Vector3.new(current.X, pos.Y, current.Z)
+        local dir = target - pos
+        local dist = dir.Magnitude
+        local stopDist = math.clamp(STEAL_PATH_BASE_STOP - dist * 0.04, STEAL_PATH_MIN_STOP, STEAL_PATH_BASE_STOP)
+        if dist <= stopDist then conn:Disconnect() hrp.AssemblyLinearVelocity = Vector3.zero return end
+        local moveDir = dir.Unit
+        if nextPoint then
+            local nextDir = (Vector3.new(nextPoint.X, pos.Y, nextPoint.Z) - pos).Unit
+            moveDir = (moveDir + nextDir * STEAL_PATH_NEXT_POINT_BIAS).Unit
+        end
+        if stealLastFlatVel.Magnitude > 0.1 then
+            moveDir = (moveDir * (1 - STEAL_PATH_SMOOTH_FACTOR) + stealLastFlatVel.Unit * STEAL_PATH_SMOOTH_FACTOR).Unit
+        end
+        local vel = Vector3.new(moveDir.X * speed, hrp.AssemblyLinearVelocity.Y, moveDir.Z * speed)
+        hrp.AssemblyLinearVelocity = vel
+        stealLastFlatVel = Vector3.new(vel.X, 0, vel.Z)
+    end)
+    while stealPathActive and
+        (Vector3.new(hrp.Position.X, 0, hrp.Position.Z) - Vector3.new(current.X, 0, current.Z)).Magnitude > STEAL_PATH_BASE_STOP do
+        RunService.Heartbeat:Wait()
+    end
+end
+
+local function stealRunPath(path)
+    local hrp = (Player.Character or Player.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart")
+    for i, p in ipairs(path) do
+        if not stealPathActive then return end
+        if i > 2 then break end
+        local speed = i > 2 and STEAL_PATH_SECOND_SPEED or STEAL_PATH_VELOCITY_SPEED
+        local nextP = path[i + 1] and path[i + 1].pos
+        stealMoveToPoint(hrp, p.pos, nextP, speed)
+        if i == 2 then task.wait(0.2) else task.wait(0.01) end
+    end
+end
+
+function startStealPath(path)
+    stealPathActive = true
+    task.spawn(function()
+        stealRunPath(path)
+        stealPathActive = false
+
+        -- Disable both AutoRight and AutoLeft
+        Enabled.AutoRight = false
+        Enabled.AutoLeft = false
+        if VisualSetters.AutoRight then VisualSetters.AutoRight(false, true) end
+        if VisualSetters.AutoLeft then VisualSetters.AutoLeft(false, true) end
+        if floatButtonReferences.AutoRight then floatButtonReferences.AutoRight(false) end
+        if floatButtonReferences.AutoLeft then floatButtonReferences.AutoLeft(false) end
+    end)
+end
+function stopStealPath()
+    stealPathActive = false
+    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.AssemblyLinearVelocity = Vector3.zero end
+end
+
+-- ============================================================
+-- KEYBINDS & CHARACTER RESET (Features Only - No GUI)
+-- ============================================================
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.Delete then
+        -- No GUI to destroy
+    elseif input.KeyCode == KEYBINDS.SPEED then
+        Enabled.SpeedBoost = not Enabled.SpeedBoost
+        if Enabled.SpeedBoost then startSpeedBoost() else stopSpeedBoost() end
+    elseif input.KeyCode == KEYBINDS.FLOAT then
+        Enabled.Float = not Enabled.Float
+        if Enabled.Float then startFloat() else stopFloat() end
+    elseif input.KeyCode == KEYBINDS.BATAIMBOT then
+        Enabled.BatAimbot = not Enabled.BatAimbot
+        if Enabled.BatAimbot then startBatAimbot() else stopBatAimbot() end
+    elseif input.KeyCode == KEYBINDS.AUTORIGHT then
+        Enabled.AutoRight = not Enabled.AutoRight
+        if Enabled.AutoRight then
+            Enabled.AutoLeft = false
+            stopStealPath() startStealPath(stealPath_Right)
+        else
+            stopStealPath()
+        end
+    elseif input.KeyCode == KEYBINDS.AUTOLEFT then
+        Enabled.AutoLeft = not Enabled.AutoLeft
+        if Enabled.AutoLeft then
+            Enabled.AutoRight = false
+            stopStealPath() startStealPath(stealPath_Left)
+        else
+            stopStealPath()
+        end
+    end
+end)
+
+Player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if Enabled.SpeedBoost then startSpeedBoost() end
+    if Enabled.AutoSteal then startAutoSteal() end
+    if Enabled.SpeedWhileStealing then startSpeedWhileStealing() end
+    if Enabled.AntiRagdoll then startAntiRagdoll() end
+    if Enabled.HitCircle then stopHitCircle() task.wait(0.1) startHitCircle() end
+    if Enabled.SpamBat then startSpamBat() end
+    if Enabled.Helicopter then startHelicopter() end
+    if Enabled.BatAimbot then stopBatAimbot() task.wait(0.1) startBatAimbot() end
+    if Enabled.InfiniteJump then stopInfiniteJump() task.wait(0.1) startInfiniteJump() end
+    if Enabled.GalaxyMode then startGalaxyMode() end
+end)
+
+-- Auto-save config on close
+game:BindToClose(function()
+    saveConfig()
+end)
