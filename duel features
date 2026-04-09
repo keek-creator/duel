@@ -1,3 +1,147 @@
+-- KEEK V2 (SAFE VERSION WITH REAL FEATURES)
+
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+
+-- GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "KeekV2"
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 320, 0, 420)
+main.Position = UDim2.new(0.5, -160, 0.5, -210)
+main.BackgroundColor3 = Color3.fromRGB(15,15,15)
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
+local stroke = Instance.new("UIStroke", main)
+stroke.Color = Color3.fromRGB(255,0,0)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,50)
+title.BackgroundTransparency = 1
+title.Text = "KEEK V2"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 22
+title.TextColor3 = Color3.new(1,1,1)
+
+local holder = Instance.new("Frame", main)
+holder.Position = UDim2.new(0,0,0,60)
+holder.Size = UDim2.new(1,0,1,-70)
+holder.BackgroundTransparency = 1
+
+local layout = Instance.new("UIListLayout", holder)
+layout.Padding = UDim.new(0,8)
+
+-- BUTTON CREATOR
+local function CreateButton(name, callback)
+    local btn = Instance.new("TextButton", holder)
+    btn.Size = UDim2.new(1,-20,0,40)
+    btn.Position = UDim2.new(0,10,0,0)
+    btn.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    btn.Text = name
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 16
+    btn.TextColor3 = Color3.fromRGB(200,200,200)
+
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+    local s = Instance.new("UIStroke", btn)
+    s.Color = Color3.fromRGB(255,0,0)
+
+    local on = false
+
+    btn.MouseButton1Click:Connect(function()
+        on = not on
+        btn.BackgroundColor3 = on and Color3.fromRGB(0,170,0) or Color3.fromRGB(25,25,25)
+        if callback then callback(on) end
+    end)
+end
+
+-- FEATURES
+
+-- WalkSpeed Boost
+CreateButton("Speed Boost", function(state)
+    humanoid.WalkSpeed = state and 32 or 16
+end)
+
+-- Jump Boost
+CreateButton("High Jump", function(state)
+    humanoid.JumpPower = state and 100 or 50
+end)
+
+-- Infinite Jump
+local infJump = false
+CreateButton("Infinite Jump", function(state)
+    infJump = state
+end)
+
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if infJump then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+-- Optimizer (LOW GRAPHICS)
+CreateButton("Optimizer", function(state)
+    if state then
+        for _,v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.Plastic
+                v.Reflectance = 0
+            end
+        end
+        game.Lighting.GlobalShadows = false
+    else
+        game.Lighting.GlobalShadows = true
+    end
+end)
+
+-- Reset Character
+CreateButton("Reset Character", function()
+    humanoid.Health = 0
+end)
+
+-- Simple UI Toggle (hide/show)
+CreateButton("Hide UI", function(state)
+    main.Visible = not state
+end)
+
+-- DRAGGING
+local UIS = game:GetService("UserInputService")
+local dragging, dragInput, startPos, startFrame
+
+main.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        startPos = input.Position
+        startFrame = main.Position
+    end
+end)
+
+main.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - startPos
+        main.Position = UDim2.new(
+            startFrame.X.Scale,
+            startFrame.X.Offset + delta.X,
+            startFrame.Y.Scale,
+            startFrame.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
