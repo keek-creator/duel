@@ -1,5 +1,5 @@
 -- ============================================================
--- NOVA DUELS - PREMIUM EDITION (ALL BLACK UI)
+-- KEEK - PREMIUM EDITION (ALL BLACK UI)
 -- Ultra-Modern UI with Glassmorphism & Animations
 -- ============================================================
 
@@ -69,7 +69,7 @@ local lastBatSwing = 0
 local BAT_SWING_COOLDOWN = 0.12
 
 -- Discord progress text for progress bar
-local DISCORD_TEXT = "https://discord.gg/MKXMA9ww"
+local DISCORD_TEXT = "https://discord.gg/6jA7JeTCS"
 
 local function getDiscordProgress(percent)
     local totalChars = #DISCORD_TEXT
@@ -912,7 +912,7 @@ local C = {
 }
 
 local gui = Instance.new("ScreenGui")
-gui.Name = "NovaDuelsGUI"
+gui.Name = "KeekDuelsGUI"
 gui.ResetOnSpawn = false
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
@@ -1045,7 +1045,7 @@ logoGradient.Parent = logo
 local logoText = Instance.new("TextLabel")
 logoText.Size = UDim2.new(1, 0, 1, 0)
 logoText.BackgroundTransparency = 1
-logoText.Text = "N"
+logoText.Text = "K"
 logoText.TextColor3 = C.text
 logoText.Font = Enum.Font.GothamBlack
 logoText.TextSize = 14
@@ -1056,7 +1056,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(0, 140, 0, 30)
 title.Position = UDim2.new(0, 42, 0, 7)
 title.BackgroundTransparency = 1
-title.Text = "NOVA DUELS"
+title.Text = "KEEK DUELS"
 title.TextColor3 = C.text
 title.Font = Enum.Font.GothamBlack
 title.TextSize = 14
@@ -1401,7 +1401,7 @@ local function finishCard(card)
 end
 
 -- Build UI
-createSection("⚡ Movement")
+createSection("Movement")
 local movementCard = createCard()
 local normalBox = createInputRow("Normal Speed", tostring(NORMAL_SPEED), movementCard)
 local carryBox = createInputRow("Carry Speed", tostring(CARRY_SPEED), movementCard)
@@ -1484,7 +1484,7 @@ end)
 movementCard.Size = UDim2.new(1, -6, 0, movementCard.Size.Y.Offset + 28)
 finishCard(movementCard)
 
-createSection("⚔️ Combat")
+createSection("Combat")
 local combatCard = createCard()
 local autoBatKeyBox = createInputRow("Auto-Bat Key", autoBatKey.Name, combatCard)
 autoBatBtn = createButton("Auto-Bat: OFF", function()
@@ -1499,7 +1499,7 @@ autoBatBtn = createButton("Auto-Bat: OFF", function()
 end, combatCard)
 finishCard(combatCard)
 
-createSection("🎮 Auto Play")
+createSection("Auto Play")
 local autoPlayCard = createCard()
 local autoLeftKeyBox = createInputRow("Left Key", autoLeftKey.Name, autoPlayCard)
 createToggleRow("Auto Left", "AutoLeftEnabled", function(state)
@@ -1924,6 +1924,6 @@ task.spawn(function()
     if Enabled.AutoRightEnabled then AutoRightEnabled = true startAutoRight() end
 end)
 
-print("=== NOVA DUELS - BLACK EDITION LOADED ===")
+print("=== KEEK DUEL - BLACK EDITION LOADED ===")
 print("Q = Toggle Speed | E = Auto Bat | M = Galaxy | Space = Hops")
 print("Z = Auto Left | C = Auto Right")
