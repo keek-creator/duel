@@ -144,7 +144,7 @@ title.Size=UDim2.new(1,0,0,16)
 title.Position=UDim2.new(0,0,0,2)
 title.Text="keek duel"
 title.BackgroundTransparency=1
-title.TextColor3=Color3.fromRGB(255,255,255)
+title.TextColor3=Color3.fromRGB(255,0,0)
 title.Font=Enum.Font.GothamBold
 title.TextSize=14
 
@@ -207,7 +207,7 @@ local auto2Btn=makeBtn("Auto Play 2",95)
 local gear=Instance.new("TextButton",main)
 gear.Size=UDim2.new(0,22,0,22)
 gear.Position=UDim2.new(1,-26,0,2)
-gear.Text="⚙️"
+gear.Text="âš™ï¸"
 gear.BackgroundTransparency=1
 gear.TextColor3=Color3.fromRGB(255,255,255)
 
@@ -329,4 +329,3 @@ auto2Btn.BackgroundColor3=Color3.fromRGB(255,255,255)
 end)
 end
 end)
-
