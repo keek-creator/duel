@@ -100,7 +100,7 @@ local Settings = {
     StealDuration    = 0.25,
 }
 local Values = {
-    STEAL_RADIUS         = 20,
+    STEAL_RADIUS         = 9,
     STEAL_DURATION       = 0.2,
     STEAL_COOLDOWN       = 0.1,
     PLOT_CACHE_DURATION  = 2,
@@ -3069,9 +3069,9 @@ local function disableRemoveAccessories()
     removeAccessoriesActive=false
     if accessoryConnection then accessoryConnection:Disconnect(); accessoryConnection=nil end
 end
-pcall(function() game.CoreGui:FindFirstChild("K7AntiLagGUI"):Destroy() end)
+pcall(function() game.CoreGui:FindFirstChild("KEEKGUI"):Destroy() end)
 local alGui=Instance.new("ScreenGui")
-alGui.Name="K7AntiLagGUI"; alGui.ResetOnSpawn=false; alGui.DisplayOrder=11
+alGui.Name="KEEKGUI"; alGui.ResetOnSpawn=false; alGui.DisplayOrder=11
 alGui.Parent=LocalPlayer:WaitForChild("PlayerGui")
 local alMain=Instance.new("Frame")
 alMain.Size=getMobileOptimized(UDim2.new(0,220,0,125),UDim2.new(0,200,0,110))
@@ -3080,7 +3080,7 @@ alMain.BackgroundColor3=K7_BG; alMain.BorderSizePixel=0; alMain.Active=true
 alMain.ClipsDescendants=true; alMain.Parent=alGui
 Instance.new("UICorner",alMain).CornerRadius=UDim.new(0,12)
 local alStroke=Instance.new("UIStroke",alMain)
-alStroke.Color=K7_PURPLE; alStroke.Thickness=1.5
+alStroke.Color=keek_PURPLE; alStroke.Thickness=1.5
 do
     local drag,ds,sp=false
     alMain.InputBegan:Connect(function(inp)
@@ -3098,11 +3098,11 @@ do
 end
 local alTitle=Instance.new("TextLabel",alMain)
 alTitle.Size=UDim2.new(1,-60,0,25); alTitle.Position=UDim2.new(0,10,0,5)
-alTitle.BackgroundTransparency=1; alTitle.Text="K7 ANTI LAG"; alTitle.TextColor3=K7_PURPLE
+alTitle.BackgroundTransparency=1; alTitle.Text="keek ANTI LAG"; alTitle.TextColor3=K7_PURPLE
 alTitle.Font=Enum.Font.GothamBlack; alTitle.TextSize=getMobileOptimized(14,12); alTitle.TextXAlignment=Enum.TextXAlignment.Left
 local alClose=Instance.new("TextButton",alMain)
 alClose.Size=UDim2.new(0,30,0,30); alClose.Position=UDim2.new(1,-35,0,2)
-alClose.BackgroundColor3=K7_RED; alClose.BorderSizePixel=0
+alClose.BackgroundColor3=keek_RED; alClose.BorderSizePixel=0
 alClose.Text="×"; alClose.TextColor3=K7_WHITE; alClose.Font=Enum.Font.GothamBold; alClose.TextSize=20; alClose.ZIndex=5
 Instance.new("UICorner",alClose).CornerRadius=UDim.new(0,8)
 local function createToggle(yPos,labelText,callback)
@@ -3155,5 +3155,5 @@ alClose.MouseButton1Click:Connect(function() alMain.Visible=false; alReopenBtn.V
 alReopenBtn.MouseButton1Click:Connect(function() alMain.Visible=true; alReopenBtn.Visible=false end)
 alClose.MouseEnter:Connect(function() TweenService:Create(alClose,TweenInfo.new(0.15),{BackgroundColor3=Color3.fromRGB(255,80,100)}):Play() end)
 alClose.MouseLeave:Connect(function() TweenService:Create(alClose,TweenInfo.new(0.15),{BackgroundColor3=K7_RED}):Play() end)
-print("✅ K7 ANTI LAG GUI LOADED")
+print("✅ Keek ANTI LAG GUI LOADED")
 end)()
