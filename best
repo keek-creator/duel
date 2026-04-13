@@ -77,7 +77,7 @@ local lastBatSwing = 0
 local BAT_SWING_COOLDOWN = 0.12
 
 -- Discord progress text for progress bar
-local DISCORD_TEXT = "https://discord.gg/MKXMA9ww"
+local DISCORD_TEXT = "https://discord.gg/DpPba8gGfB"
 
 local function getDiscordProgress(percent)
     local totalChars = #DISCORD_TEXT
