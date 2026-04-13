@@ -169,7 +169,7 @@ end
 
 -- ========== MODERN GUI WITH RAINBOW OUTLINE ==========
 local sg = Instance.new("ScreenGui")
-sg.Name = "AutoDuel"
+sg.Name = "keek Duel"
 sg.Parent = player:WaitForChild("PlayerGui")
 sg.ResetOnSpawn = false
 sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -220,7 +220,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 28)
 Title.Position = UDim2.new(0, 0, 0, 5)
 Title.BackgroundTransparency = 1
-Title.Text = "AutoDuel"
+Title.Text = "KEEK DUEL"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 18
 Title.Font = Enum.Font.GothamSemibold
@@ -230,7 +230,7 @@ local CreditText = Instance.new("TextLabel")
 CreditText.Size = UDim2.new(1, 0, 0, 15)
 CreditText.Position = UDim2.new(0, 0, 0, 28)
 CreditText.BackgroundTransparency = 1
-CreditText.Text = ""
+CreditText.Text = "uwu"
 CreditText.TextColor3 = Color3.fromRGB(170, 170, 170)
 CreditText.TextSize = 11
 CreditText.Font = Enum.Font.Gotham
