@@ -1,0 +1,219 @@
+-- SERVICES
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+-- WAYPOINTS
+local rightWaypoints = {
+    Vector3.new(-473.04, -6.99, 29.71),
+    Vector3.new(-483.57, -5.10, 18.74),
+    Vector3.new(-475.00, -6.99, 26.43),
+    Vector3.new(-474.67, -6.94, 105.48),
+}
+
+local leftWaypoints = {
+    Vector3.new(-472.49, -7.00, 90.62),
+    Vector3.new(-484.62, -5.10, 100.37),
+    Vector3.new(-475.08, -7.00, 93.29),
+    Vector3.new(-474.22, -6.96, 16.18),
+}
+
+-- STATES
+local patrolMode = "none"
+local currentWaypoint = 1
+local infJump = false
+local batAimbot = false
+local autoGrab = false
+
+-- =========================
+-- 🔹 MOVEMENT
+-- =========================
+RunService.Heartbeat:Connect(function()
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    if patrolMode ~= "none" then
+        local waypoints = (patrolMode == "right") and rightWaypoints or leftWaypoints
+        local target = waypoints[currentWaypoint]
+
+        if not target then return end
+
+        local pos = root.Position
+        local dist = (Vector3.new(target.X,0,target.Z) - Vector3.new(pos.X,0,pos.Z)).Magnitude
+
+        if dist > 3 then
+            local dir = (target - pos).Unit
+            root.AssemblyLinearVelocity = Vector3.new(dir.X * 60, root.AssemblyLinearVelocity.Y, dir.Z * 60)
+        else
+            currentWaypoint += 1
+            if currentWaypoint > #waypoints then
+                patrolMode = "none"
+                currentWaypoint = 1
+            end
+        end
+    end
+end)
+
+-- =========================
+-- 🔹 INFINITE JUMP
+-- =========================
+UserInputService.JumpRequest:Connect(function()
+    if not infJump then return end
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+
+    if root then
+        local v = root.AssemblyLinearVelocity
+        root.AssemblyLinearVelocity = Vector3.new(v.X, 0, v.Z) + Vector3.new(0, 50, 0)
+    end
+end)
+
+-- =========================
+-- 🔹 AIMBOT
+-- =========================
+local function getNearest()
+    local char = player.Character
+    if not char then return end
+
+    local myHRP = char:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return end
+
+    local nearest, dist = nil, math.huge
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+
+            if hrp and hum and hum.Health > 0 then
+                local d = (hrp.Position - myHRP.Position).Magnitude
+                if d < dist then
+                    dist = d
+                    nearest = hrp
+                end
+            end
+        end
+    end
+    return nearest
+end
+
+RunService.Heartbeat:Connect(function()
+    if not batAimbot then return end
+
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local target = getNearest()
+    if target then
+        local dir = (target.Position - hrp.Position)
+        local flat = Vector3.new(dir.X, 0, dir.Z)
+
+        if flat.Magnitude > 1 then
+            local move = flat.Unit
+            hrp.AssemblyLinearVelocity = Vector3.new(
+                move.X * 55,
+                hrp.AssemblyLinearVelocity.Y,
+                move.Z * 55
+            )
+        end
+    end
+end)
+
+-- =========================
+-- 🔹 AUTO GRAB
+-- =========================
+RunService.Heartbeat:Connect(function()
+    if not autoGrab then return end
+
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not root or not hum then return end
+
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Tool") then
+            local handle = v:FindFirstChild("Handle")
+            if handle and (handle.Position - root.Position).Magnitude <= 35 then
+                pcall(function()
+                    hum:EquipTool(v)
+                end)
+            end
+        end
+    end
+end)
+
+-- =========================
+-- 🎨 GUI
+-- =========================
+local sg = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local frame = Instance.new("Frame", sg)
+
+frame.Size = UDim2.new(0, 220, 0, 260)
+frame.Position = UDim2.new(0.5, -110, 0.5, -130)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.Active = true
+frame.Draggable = true
+
+Instance.new("UICorner", frame)
+
+local function makeBtn(text, y)
+    local b = Instance.new("TextButton", frame)
+    b.Size = UDim2.new(0.85,0,0,32)
+    b.Position = UDim2.new(0.075,0,0,y)
+    b.BackgroundColor3 = Color3.fromRGB(45,45,45)
+    b.Text = text
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 12
+    Instance.new("UICorner", b)
+    return b
+end
+
+-- BUTTONS
+local infBtn = makeBtn("Infinite Jump OFF", 10)
+infBtn.MouseButton1Click:Connect(function()
+    infJump = not infJump
+    infBtn.Text = infJump and "Infinite Jump ON" or "Infinite Jump OFF"
+end)
+
+local aimBtn = makeBtn("Bat Aimbot OFF", 50)
+aimBtn.MouseButton1Click:Connect(function()
+    batAimbot = not batAimbot
+    aimBtn.Text = batAimbot and "Bat Aimbot ON" or "Bat Aimbot OFF"
+end)
+
+local grabBtn = makeBtn("Auto Grab OFF", 90)
+grabBtn.MouseButton1Click:Connect(function()
+    autoGrab = not autoGrab
+    grabBtn.Text = autoGrab and "Auto Grab ON" or "Auto Grab OFF"
+end)
+
+local rightBtn = makeBtn("AutoRight OFF", 140)
+rightBtn.MouseButton1Click:Connect(function()
+    if patrolMode == "right" then
+        patrolMode = "none"
+        rightBtn.Text = "AutoRight OFF"
+    else
+        patrolMode = "right"
+        currentWaypoint = 1
+        rightBtn.Text = "AutoRight ON"
+        leftBtn.Text = "AutoLeft OFF"
+    end
+end)
+
+local leftBtn = makeBtn("AutoLeft OFF", 180)
+leftBtn.MouseButton1Click:Connect(function()
+    if patrolMode == "left" then
+        patrolMode = "none"
+        leftBtn.Text = "AutoLeft OFF"
+    else
+        patrolMode = "left"
+        currentWaypoint = 1
+        leftBtn.Text = "AutoLeft ON"
+        rightBtn.Text = "AutoRight OFF"
+    end
+end)
