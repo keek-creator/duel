@@ -1856,8 +1856,14 @@ RunService.RenderStepped:Connect(function()
         local speed = speedToggled and CARRY_SPEED or NORMAL_SPEED
         
         if md.Magnitude > 0 then
-            hrp.Velocity = Vector3.new(md.X * speed, hrp.Velocity.Y, md.Z * speed)
-        end
+    local targetSpeed = speedToggled and CARRY_SPEED or NORMAL_SPEED
+    
+    hrp.AssemblyLinearVelocity = Vector3.new(
+        md.X * targetSpeed,
+        hrp.AssemblyLinearVelocity.Y,
+        md.Z * targetSpeed
+    )
+end
     end
     
     if speedLbl then
