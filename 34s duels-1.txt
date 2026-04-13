@@ -1173,6 +1173,7 @@ local function rayfield_interface()
     -- CLEAN THEME COLOR PALETTE
     -- ==============================================================================
     local CleanWhite     = Color3.fromRGB(235, 235, 245)
+    local DarkBackground = Color3.fromRGB(18, 18, 22)  -- or use BlackBackground if you prefer
     local CleanGray      = Color3.fromRGB(160, 160, 180)
     local AccentBlue     = Color3.fromRGB(110, 130, 220)
     local BlackBackground = Color3.fromRGB(0, 0, 0)
@@ -2109,12 +2110,6 @@ local function rayfield_interface()
         if now - lastTime >= 1 then
             FpsLabel.Text = "FPS: " .. frames
             frames = 0
-            lastTime = now
-        end
-    end)
-end
-
-rayfield_interface()d_interface() frames = 0
             lastTime = now
         end
     end)
