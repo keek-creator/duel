@@ -29,6 +29,16 @@ local rightWaypoints = {
         Vector3.new(-474.22, -6.96, 16.18),
     }
 
+local POS_L1 = leftWaypoints[1]
+local POS_L2 = leftWaypoints[2]
+local POS_L3 = leftWaypoints[3]
+local LFINAL = leftWaypoints[4]
+
+local POS_R1 = rightWaypoints[1]
+local POS_R2 = rightWaypoints[2]
+local POS_R3 = rightwaypoints[3]
+local RFINAL = rightWaypoints[4]
+
 aplOn=false aprOn=false aplPhase=1 aprPhase=1 aplConn=nil aprConn=nil
 autoStealEnabled=false isStealing=false stealStartTime=nil
 autoStealConn=nil progressConn=nil STEAL_RADIUS=20 STEAL_DURATION=0.35
