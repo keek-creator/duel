@@ -825,7 +825,7 @@ ScreenGui.Parent=player:WaitForChild("PlayerGui")
 local MainFrame=Instance.new("Frame")
 MainFrame.Name="MainFrame" MainFrame.Size=UDim2.new(0,360,0,580)
 MainFrame.Position=UDim2.new(0.5,-180,0.5,-290) MainFrame.BackgroundColor3=BG
-MainFrame.BorderSizePixel=0 MainFrame.Active=true MainFrame.Visible=false MainFrame.Parent=ScreenGui
+MainFrame.BorderSizePixel=0 MainFrame.Active=true MainFrame.Visible= true MainFrame.Parent=ScreenGui
 Instance.new("UICorner",MainFrame).CornerRadius=UDim.new(0,16)
 
 local MainStroke=Instance.new("UIStroke",MainFrame)
@@ -1371,3 +1371,15 @@ applyFOV()
 
 print("keekX Duels loaded — https://discord.gg/DpPba8gGfB")
 pseX Duels loaded — https://discord.gg/DpPba8gGfB")
+
+local UIS = game:GetService("UserInputService")
+
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        local gui = game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("keekXDuels")
+        if gui and gui:FindFirstChild("MainFrame") then
+            gui.MainFrame.Visible = not gui.MainFrame.Visible
+        end
+    end
+end)
