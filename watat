@@ -907,7 +907,10 @@ player.CharacterAdded:Connect(function(c) task.wait(0.5) setupChar(c) end)
 local ScreenGui=Instance.new("ScreenGui")
 ScreenGui.Name="keekXDuels" ScreenGui.ResetOnSpawn=false
 ScreenGui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling ScreenGui.IgnoreGuiInset=false
-ScreenGui.Parent=player:WaitForChild("PlayerGui")
+local pgui = player:FindFirstChild("PlayerGui") or player:WaitForChild("PlayerGui",5)
+if pgui then
+    ScreenGui.Parent = pgui
+end
 
 local MainFrame=Instance.new("Frame")
 MainFrame.Name="MainFrame" MainFrame.Size=UDim2.new(0,360,0,580)
