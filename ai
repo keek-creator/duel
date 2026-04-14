@@ -2310,14 +2310,3 @@ task.spawn(function()
     if Enabled.InfiniteJump    then startInfiniteJump()     end
     updateHeadLabelVisibility()
 end)
-By @princess/gorrexxsz77f Enabled.NoClip          then startNoClip()           end
-    if Enabled.BatAimbot       then autoBatToggled=true; startBatAimbot() end
-    if Enabled.RagdollTP       then startRagdollTP()        end
-    if Enabled.AutoCarryOnPickup then startAutoCarryMode()  end
-    if Enabled.WaypointESP     then startWaypointESP()      end
-    if Enabled.CounterMedusa   then startCounterMedusa()    end
-    if Enabled.FloatEnabled    then floatEnabled=true; startFloat() end
-    if Enabled.InfiniteJump    then startInfiniteJump()     end
-    updateHeadLabelVisibility()
-end)
-By @imguy_6677
