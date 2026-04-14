@@ -1,5 +1,3 @@
--- leaked by script haven join for the best cheap sources https://discord.gg/xfwA9fNFMe
-
 repeat task.wait() until game:IsLoaded()
 
 local Players          = game:GetService("Players")
@@ -41,18 +39,45 @@ local returnRKey         = Enum.KeyCode.M
 
 local guiVisible = true
 
+-- ─── WAYPOINTS (FIXED) ──────────────────────────────────────────────────────
 local rightWaypoints = {
-        Vector3.new(-473.04, -6.99, 29.71),
-        Vector3.new(-483.57, -5.10, 18.74),
-        Vector3.new(-475.00, -6.99, 26.43),
-        Vector3.new(-474.67, -6.94, 105.48),
-    }
-    local leftWaypoints = {
-        Vector3.new(-472.49, -7.00, 90.62),
-        Vector3.new(-484.62, -5.10, 100.37),
-        Vector3.new(-475.08, -7.00, 93.29),
-        Vector3.new(-474.22, -6.96, 16.18),
-    }
+    Vector3.new(-473.04, -6.99, 29.71),
+    Vector3.new(-483.57, -5.10, 18.74),
+    Vector3.new(-475.00, -6.99, 26.43),
+    Vector3.new(-474.67, -6.94, 105.48),
+}
+
+local leftWaypoints = {
+    Vector3.new(-472.49, -7.00, 90.62),
+    Vector3.new(-484.62, -5.10, 100.37),
+    Vector3.new(-475.08, -7.00, 93.29),
+    Vector3.new(-474.22, -6.96, 16.18),
+}
+
+local WP = {
+    Left     = {},
+    Right    = {},
+    LeftPlay = {},
+    RightPlay = {},
+}
+
+-- Normal Auto Left / Right (2 points)
+WP.Left[1] = { pos = leftWaypoints[1],  offset = Vector3.new(0,0,0), label = "L1" }
+WP.Left[2] = { pos = leftWaypoints[2],  offset = Vector3.new(0,0,0), label = "L2" }
+
+WP.Right[1] = { pos = rightWaypoints[1], offset = Vector3.new(0,0,0), label = "R1" }
+WP.Right[2] = { pos = rightWaypoints[2], offset = Vector3.new(0,0,0), label = "R2" }
+
+-- Auto L Play / R Play (3-point carry routes)
+-- Using point 1 → 2 → 4 (the far/return point) for the play modes
+WP.LeftPlay[1] = { pos = leftWaypoints[1],  offset = Vector3.new(0,0,0), label = "LP1" }
+WP.LeftPlay[2] = { pos = leftWaypoints[2],  offset = Vector3.new(0,0,0), label = "LP2" }
+WP.LeftPlay[3] = { pos = leftWaypoints[4],  offset = Vector3.new(0,0,0), label = "LP3" }
+
+WP.RightPlay[1] = { pos = rightWaypoints[1], offset = Vector3.new(0,0,0), label = "RP1" }
+WP.RightPlay[2] = { pos = rightWaypoints[2], offset = Vector3.new(0,0,0), label = "RP2" }
+WP.RightPlay[3] = { pos = rightWaypoints[4], offset = Vector3.new(0,0,0), label = "RP3" }
+
 local function wpPos(wp) return wp.pos + wp.offset end
 
 local Values = {
