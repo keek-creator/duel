@@ -982,16 +982,19 @@ do local ex = workspace:FindFirstChild("Countdown"); if ex and ex:IsA("Sound") t
 -- ============================================================
 -- FULL AUTO PLAY (replaced with Script 2 logic)
 -- ============================================================
-local FAP_L1 = Vector3.new(-476.48, -6.28, 92.73)
-local FAP_L2 = Vector3.new(-482.85, -5.03, 93.13)
-local FAP_L3 = Vector3.new(-475.68, -6.89, 92.76)
-local FAP_L4 = Vector3.new(-476.50, -6.46, 27.58)
-local FAP_L5 = Vector3.new(-482.42, -5.03, 27.84)
-local FAP_R1 = Vector3.new(-476.16, -6.52, 25.62)
-local FAP_R2 = Vector3.new(-483.06, -5.03, 27.51)
-local FAP_R3 = Vector3.new(-476.21, -6.63, 27.46)
-local FAP_R4 = Vector3.new(-476.66, -6.39, 92.44)
-local FAP_R5 = Vector3.new(-481.94, -5.03, 92.42)
+-- LEFT SIDE
+local FAP_L1 = Vector3.new(-472.49, -7.00, 90.62)
+local FAP_L2 = Vector3.new(-484.62, -5.10, 100.37)
+local FAP_L3 = Vector3.new(-475.08, -7.00, 93.29)
+local FAP_L4 = Vector3.new(-474.22, -6.96, 16.18)
+local FAP_L5 = Vector3.new(-474.22, -6.96, 16.18)
+
+-- RIGHT SIDE
+local FAP_R1 = Vector3.new(-473.04, -6.99, 29.71)
+local FAP_R2 = Vector3.new(-483.57, -5.10, 18.74)
+local FAP_R3 = Vector3.new(-475.00, -6.99, 26.43)
+local FAP_R4 = Vector3.new(-474.67, -6.94, 105.48)
+local FAP_R5 = Vector3.new(-474.67, -6.94, 105.48)
 local FACE_FAP_L = Vector3.new(-482.25, -4.96, 92.09)
 local FACE_FAP_R = Vector3.new(-482.06, -6.93, 35.47)
 
