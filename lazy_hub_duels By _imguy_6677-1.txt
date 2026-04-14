@@ -1,5 +1,11 @@
 repeat task.wait() until game:IsLoaded()
 
+-- FORCE RELOAD (fixes "nothing shows")
+getgenv().KEEK_HUB_LOADED = nil
+if game:GetService("CoreGui"):FindFirstChild("LazyHubGUI") then
+    game:GetService("CoreGui").LazyHubGUI:Destroy()
+end
+
 local Players          = game:GetService("Players")
 local RunService       = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
