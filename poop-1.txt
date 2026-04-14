@@ -1378,5 +1378,5 @@ end)
 
 if espEnabled then enableESP() end
 applyFOV()
-print("Krek Duels loaded — https://discord.gg/JFBEThr9f")
-")
+
+print("Keek Duels loaded")
