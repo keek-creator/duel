@@ -29,6 +29,93 @@ local rightWaypoints = {
         Vector3.new(-474.22, -6.96, 16.18),
     }
 
+-- CLEAN AUTO PLAY (NEW)
+
+local aplConn, aprConn
+local aplOn = false
+local aprOn = false
+
+local function moveToWaypoint(target, speed)
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return true end
+
+    local direction = Vector3.new(target.X - hrp.Position.X, 0, target.Z - hrp.Position.Z)
+
+    if direction.Magnitude < 2 then
+        return true
+    end
+
+    local moveDir = direction.Unit
+    hum:Move(moveDir, false)
+
+    hrp.AssemblyLinearVelocity = Vector3.new(
+        moveDir.X * speed,
+        hrp.AssemblyLinearVelocity.Y,
+        moveDir.Z * speed
+    )
+
+    return false
+end
+
+-- AUTO LEFT
+function startAutoPlayLeft()
+    if aplConn then aplConn:Disconnect() end
+    aplOn = true
+
+    local index = 1
+
+    aplConn = game:GetService("RunService").Heartbeat:Connect(function()
+        if not aplOn then return end
+
+        local target = leftWaypoints[index]
+        if not target then
+            aplOn = false
+            return
+        end
+
+        local speed = (index <= 2) and 60 or 29
+
+        if moveToWaypoint(target, speed) then
+            index += 1
+        end
+    end)
+end
+
+function stopAutoPlayLeft()
+    aplOn = false
+    if aplConn then aplConn:Disconnect() end
+end
+
+-- AUTO RIGHT
+function startAutoPlayRight()
+    if aprConn then aprConn:Disconnect() end
+    aprOn = true
+
+    local index = 1
+
+    aprConn = game:GetService("RunService").Heartbeat:Connect(function()
+        if not aprOn then return end
+
+        local target = rightWaypoints[index]
+        if not target then
+            aprOn = false
+            return
+        end
+
+        local speed = (index <= 2) and 60 or 29
+
+        if moveToWaypoint(target, speed) then
+            index += 1
+        end
+    end)
+end
+
+function stopAutoPlayRight()
+    aprOn = false
+    if aprConn then aprConn:Disconnect() end
+end
+
 aplOn=false aprOn=false aplPhase=1 aprPhase=1 aplConn=nil aprConn=nil
 autoStealEnabled=false isStealing=false stealStartTime=nil
 autoStealConn=nil progressConn=nil STEAL_RADIUS=20 STEAL_DURATION=0.35
