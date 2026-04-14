@@ -1378,5 +1378,36 @@ end)
 
 if espEnabled then enableESP() end
 applyFOV()
+-- THE CORRECT FINISHED BOTTOM OF YOUR SCRIPT
+RunService.Heartbeat:Connect(function()
+    if not gChar or not gHum or not gHrp then return end
+    if spinBotEnabled and spinBAV then spinBAV.AngularVelocity=Vector3.new(0,SPIN_SPEED,0) end
+    if galaxyEnabled then updateGalaxyForce() end
+    if galaxyEnabled and hopsEnabled and spaceHeld then doHop() end
+    
+    -- Movement Speed Logic
+    if not batAimbotEnabled and not aplOn and not aprOn then
+        local md = gHum.MoveDirection
+        if md.Magnitude > 0.1 then 
+            local spd = slowDownEnabled and SLOW_SPEED or NORMAL_SPEED
+            gHrp.AssemblyLinearVelocity = Vector3.new(md.X * spd, gHrp.AssemblyLinearVelocity.Y, md.Z * spd)
+        end
+    end
+end)
 
-print("Keek Duels loaded")
+-- THIS PART DETECTS YOUR KEYPRESSES (Q, E, V, etc.)
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Keybinds.AutoLeft then
+        aplOn = not aplOn
+        if aplOn then startAutoPlayLeft() else stopAutoPlayLeft() end
+    elseif input.KeyCode == Keybinds.AutoRight then
+        aprOn = not aprOn
+        if aprOn then startAutoPlayRight() else stopAutoPlayRight() end
+    elseif input.KeyCode == Keybinds.AutoSteal then
+        autoStealEnabled = not autoStealEnabled
+        if autoStealEnabled then startAutoSteal() else stopAutoSteal() end
+    end
+end)
+
+print("Script fully loaded! Use Q, E, and V to toggle features.")
