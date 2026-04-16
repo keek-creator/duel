@@ -268,11 +268,19 @@ local function startAutoRight()
         local moveDir = direction.Unit
         hum:Move(moveDir, false)
 
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
+        local speed = Config.ForwardSpeed
+
+-- if target is one of your special coordinates
+if (target - Vector3.new(-474.67, -6.94, 105.48)).Magnitude < 1
+or (target - Vector3.new(-474.22, -6.96, 16.18)).Magnitude < 1 then
+    speed = 29
+end
+
+h.AssemblyLinearVelocity = Vector3.new(
+    moveDir.X * speed,
+    h.AssemblyLinearVelocity.Y,
+    moveDir.Z * speed
+)
     end)
 end
 
@@ -308,11 +316,19 @@ local function startAutoLeft()
         local moveDir = direction.Unit
         hum:Move(moveDir, false)
 
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
+        local speed = Config.ForwardSpeed
+
+-- if target is one of your special coordinates
+if (target - Vector3.new(-474.67, -6.94, 105.48)).Magnitude < 1
+or (target - Vector3.new(-474.22, -6.96, 16.18)).Magnitude < 1 then
+    speed = 29
+end
+
+h.AssemblyLinearVelocity = Vector3.new(
+    moveDir.X * speed,
+    h.AssemblyLinearVelocity.Y,
+    moveDir.Z * speed
+)
     end)
 end
 
