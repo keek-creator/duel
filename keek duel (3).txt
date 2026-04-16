@@ -596,6 +596,18 @@ createInputBox("Carry Speed", CarrySpeedValue, function(val)
     CarrySpeedValue = val
 end)
 
+-- SPEED INPUTS
+createInputBox("Walk Speed", WalkSpeedValue, function(val)
+    WalkSpeedValue = val
+end)
+
+createInputBox("Carry Speed", CarrySpeedValue, function(val)
+    CarrySpeedValue = val
+end)
+
+-- SAVE BUTTON (already in your script)
+local saveBtn = Instance.new("TextButton")
+
 local saveBtn = Instance.new("TextButton")
 saveBtn.Size = UDim2.new(0.9, 0, 0, 32); saveBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0); saveBtn.Text = "SAVE CONFIG"; saveBtn.TextColor3 = Color3.new(1, 1, 1); saveBtn.Font = Enum.Font.LuckiestGuy; saveBtn.TextSize = 14; saveBtn.Parent = container
 Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 6)
