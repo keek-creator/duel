@@ -450,3 +450,362 @@ ProgressBarFill.BackgroundColor3 = C.white
 ProgressBarFill.ZIndex = 3
 rc(ProgressBarFill, 4)
 
+--// UI SETUP - SIDE MENU & TOGGLES //
+local GALAXY_DARK   = Color3.fromRGB(5, 5, 5)
+local GALAXY_ACCENT = Color3.fromRGB(100, 100, 100)
+local GALAXY_PURPLE = Color3.fromRGB(40, 40, 40)
+
+local openBtn = Instance.new("TextButton")
+openBtn.Size = UDim2.new(0, 55, 0, 55)
+openBtn.Position = UDim2.new(0, 20, 0.5, -27)
+openBtn.BackgroundColor3 = GALAXY_DARK
+openBtn.Text = "K"
+openBtn.TextColor3 = GALAXY_ACCENT
+openBtn.TextSize = 28
+openBtn.Font = Enum.Font.LuckiestGuy
+openBtn.Parent = screenGui
+openBtn.Draggable = true
+rc(openBtn, 999)
+
+local sideMenu = Instance.new("Frame")
+sideMenu.Size = UDim2.new(0, 200, 0, 360)
+sideMenu.Position = UDim2.new(0, 85, 0.5, -180)
+sideMenu.BackgroundColor3 = GALAXY_DARK
+sideMenu.Visible = true
+sideMenu.Parent = screenGui
+rc(sideMenu, 15)
+st(sideMenu, 2, GALAXY_PURPLE)
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 45)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "keek duel"
+titleLabel.TextColor3 = GALAXY_ACCENT
+titleLabel.TextSize = 22
+titleLabel.Font = Enum.Font.LuckiestGuy
+titleLabel.Parent = sideMenu
+
+local container = Instance.new("Frame")
+container.Size = UDim2.new(0.9, 0, 0.82, 0)
+container.Position = UDim2.new(0.05, 0, 0.14, 0)
+container.BackgroundTransparency = 1
+container.Parent = sideMenu
+
+local layout = Instance.new("UIListLayout", container)
+layout.Padding = UDim.new(0, 12)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local function createToggle(text)
+    local frame = Instance.new("TextButton")
+    frame.Size = UDim2.new(1, 0, 0, 34)
+    frame.BackgroundTransparency = 1
+    frame.Text = ""
+    frame.Parent = container
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.6, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Font = Enum.Font.LuckiestGuy
+    label.TextSize = 13
+    label.Parent = frame
+    
+    local switchBase = Instance.new("Frame")
+    switchBase.Size = UDim2.new(0, 42, 0, 22)
+    switchBase.Position = UDim2.new(1, -42, 0.5, -11)
+    switchBase.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    switchBase.Parent = frame
+    rc(switchBase, 999)
+    
+    local indicator = Instance.new("Frame")
+    indicator.Size = UDim2.new(0, 18, 0, 18)
+    indicator.Position = UDim2.new(0, 2, 0.5, -9)
+    indicator.BackgroundColor3 = Color3.new(1, 1, 1)
+    indicator.Parent = switchBase
+    rc(indicator, 999)
+    
+    return frame, indicator, switchBase
+end
+
+local fovToggle, fovInd, fovBase = createToggle("FOV (100)")
+local galaxyToggle, galInd, galBase = createToggle("GALAXY MODE")
+local antiBatToggle, batInd, batBase = createToggle("ANTI BAT")
+local antiFlingToggle, fliInd, fliBase = createToggle("ANTI-FLING")
+local infJumpToggle, jumpInd, jumpBase = createToggle("INFINITE JUMP")
+local noAnimToggle, noAnimInd, noAnimBase = createToggle("NO ANIMATION")
+
+local saveBtn = Instance.new("TextButton")
+saveBtn.Size = UDim2.new(0.9, 0, 0, 32)
+saveBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+saveBtn.Text = "SAVE CONFIG"
+saveBtn.TextColor3 = Color3.new(1, 1, 1)
+saveBtn.Font = Enum.Font.LuckiestGuy
+saveBtn.TextSize = 14
+saveBtn.Parent = container
+rc(saveBtn, 6)
+
+--// FLOATING BARS //
+local function createFloatingBar(name, defaultText, startPos)
+    local frame = Instance.new("Frame")
+    frame.Name = name
+    frame.Size = UDim2.new(0, 160, 0, 40)
+    frame.Position = startPos
+    frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    frame.BorderSizePixel = 0
+    frame.Active = true
+    frame.Parent = screenGui
+    
+    local uiGradient = Instance.new("UIGradient")
+    uiGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(26, 11, 46)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 5, 20))
+    }
+    uiGradient.Rotation = 45
+    uiGradient.Parent = frame
+    
+    rc(frame, 8)
+    
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Color = Color3.fromRGB(138, 43, 226)
+    uiStroke.Thickness = 2
+    uiStroke.Transparency = 0.2
+    uiStroke.Parent = frame
+    
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 1, 0)
+    btn.BackgroundTransparency = 1
+    btn.Text = defaultText
+    btn.TextColor3 = Color3.fromRGB(200, 180, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 13
+    btn.Parent = frame
+    
+    return frame, btn, uiStroke, uiGradient
+end
+
+local frameAuto, btnAuto, strokeAuto, gradAuto = createFloatingBar("AutoBar", "AUTO PLAY: OFF", UDim2.new(0.3, 0, 0.3, 0))
+local frameGrab, btnGrab, strokeGrab, gradGrab = createFloatingBar("GrabBar", "AUTO GRAB: OFF", UDim2.new(0.6, 0, 0.3, 0))
+local frameDrop, btnDrop, strokeDrop, gradDrop = createFloatingBar("DropBar", "DROP", UDim2.new(0.3, 0, 0.45, 0))
+local frameFloat, btnFloat, strokeFloat, gradFloat = createFloatingBar("FloatBar", "FLOAT: OFF", UDim2.new(0.45, 0, 0.45, 0))
+local frameTP, btnTP, strokeTP, gradTP = createFloatingBar("TPBar", "TP DOWN", UDim2.new(0.6, 0, 0.45, 0))
+local frameLock, btnLock, strokeLock, gradLock = createFloatingBar("LockBar", "LOCK: OFF", UDim2.new(0.3, 0, 0.60, 0))
+
+--// UI CONNECTIONS & VISUALS //
+local function updateVisual(on, ind, base)
+    TweenService:Create(ind, TweenInfo.new(0.25), {Position = on and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play()
+    TweenService:Create(base, TweenInfo.new(0.25), {BackgroundColor3 = on and GALAXY_PURPLE or Color3.fromRGB(40, 40, 60)}):Play()
+end
+
+local function setVisual(btn, grad, stroke, state, onTxt, offTxt)
+    btn.Text = state and onTxt or offTxt
+    btn.TextColor3 = state and Color3.new(1,1,1) or Color3.fromRGB(200, 180, 255)
+    grad.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, state and Color3.fromRGB(65, 20, 100) or Color3.fromRGB(26, 11, 46)),
+        ColorSequenceKeypoint.new(1, state and Color3.fromRGB(20, 50, 80) or Color3.fromRGB(5, 5, 20))
+    }
+    stroke.Color = state and Color3.fromRGB(50, 255, 150) or Color3.fromRGB(138, 43, 226)
+end
+
+-- Button clicks
+openBtn.MouseButton1Click:Connect(function()
+    sideMenu.Visible = not sideMenu.Visible
+end)
+
+fovToggle.MouseButton1Click:Connect(function()
+    fovOn = not fovOn
+    camera.FieldOfView = fovOn and 100 or 70
+    updateVisual(fovOn, fovInd, fovBase)
+end)
+
+galaxyToggle.MouseButton1Click:Connect(function()
+    galaxyOn = not galaxyOn
+    if galaxyOn then
+        local sky = Lighting:FindFirstChild("GalaxySky") or Instance.new("Sky")
+        sky.Name = "GalaxySky"
+        sky.SkyboxBk = "rbxassetid://159454299"
+        sky.SkyboxDn = "rbxassetid://159454296"
+        sky.SkyboxFt = "rbxassetid://159454293"
+        sky.SkyboxLf = "rbxassetid://159454286"
+        sky.SkyboxRt = "rbxassetid://159454289"
+        sky.SkyboxUp = "rbxassetid://159454291"
+        sky.Parent = Lighting
+        Lighting.Brightness = 0
+        Lighting.ClockTime = 0
+        Lighting.OutdoorAmbient = Color3.fromRGB(0,0,0)
+    else
+        if Lighting:FindFirstChild("GalaxySky") then Lighting.GalaxySky:Destroy() end
+        Lighting.Brightness = defBrightness
+        Lighting.ClockTime = defClock
+        Lighting.OutdoorAmbient = defAmbient
+    end
+    updateVisual(galaxyOn, galInd, galBase)
+end)
+
+antiBatToggle.MouseButton1Click:Connect(function() antiBatOn = not antiBatOn; updateVisual(antiBatOn, batInd, batBase) end)
+antiFlingToggle.MouseButton1Click:Connect(function() antiFlingOn = not antiFlingOn; updateVisual(antiFlingOn, fliInd, fliBase) end)
+infJumpToggle.MouseButton1Click:Connect(function() infinityJumpEnabled = not infinityJumpEnabled; updateVisual(infinityJumpEnabled, jumpInd, jumpBase) end)
+noAnimToggle.MouseButton1Click:Connect(function()
+    if not noAnimToggled then startNoAnim() else stopNoAnim() end
+    updateVisual(noAnimToggled, noAnimInd, noAnimBase)
+end)
+
+btnAuto.MouseButton1Click:Connect(function()
+    AutoPlayEnabled = not AutoPlayEnabled
+    setVisual(btnAuto, gradAuto, strokeAuto, AutoPlayEnabled, "AUTO PLAY: ON", "AUTO PLAY: OFF")
+    if AutoPlayEnabled then
+        if AutoPlayDirection == "Right" then AutoRightEnabled = true; startAutoRight() else AutoLeftEnabled = true; startAutoLeft() end
+    else
+        AutoRightEnabled = false; AutoLeftEnabled = false; stopAutoRight(); stopAutoLeft()
+    end
+end)
+
+btnGrab.MouseButton1Click:Connect(function()
+    instaGrabEnabled = not instaGrabEnabled
+    setVisual(btnGrab, gradGrab, strokeGrab, instaGrabEnabled, "AUTO GRAB: ON", "AUTO GRAB: OFF")
+end)
+
+btnFloat.MouseButton1Click:Connect(function()
+    isFloating = not isFloating
+    setVisual(btnFloat, gradFloat, strokeFloat, isFloating, "FLOAT: ON", "FLOAT: OFF")
+    if isFloating then startFloat() else stopFloat() end
+end)
+
+btnDrop.MouseButton1Click:Connect(function()
+    toggleDrop(not dropEnabled)
+    setVisual(btnDrop, gradDrop, strokeDrop, dropEnabled, "DROP: ON", "DROP: OFF")
+end)
+
+btnLock.MouseButton1Click:Connect(function()
+    SETTINGS.LOCK_ENABLED = not SETTINGS.LOCK_ENABLED
+    setVisual(btnLock, gradLock, strokeLock, SETTINGS.LOCK_ENABLED, "LOCK: ON", "LOCK: OFF")
+end)
+
+btnTP.MouseButton1Click:Connect(function()
+    doTPDown()
+end)
+
+--// MAIN HEARTBEAT LOOP //
+RunService.Heartbeat:Connect(function()
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    
+    if root and hum and antiBatOn then
+        local threat = false
+        for _, other in ipairs(Players:GetPlayers()) do
+            if other ~= player and other.Character and other.Character:FindFirstChild("HumanoidRootPart") then
+                if (root.Position - other.Character.HumanoidRootPart.Position).Magnitude <= detectDistance then
+                    threat = true
+                    break
+                end
+            end
+        end
+        if threat then
+            if not root:FindFirstChild("CryzsnForce") then
+                local bv = Instance.new("BodyAngularVelocity")
+                bv.Name = "CryzsnForce"
+                bv.MaxTorque = Vector3.new(0, math.huge, 0)
+                bv.AngularVelocity = Vector3.new(0, 50, 0)
+                bv.Parent = root
+                hum.AutoRotate = false
+            end
+        else
+            local spin = root:FindFirstChild("CryzsnForce")
+            if spin then spin:Destroy(); hum.AutoRotate = true end
+        end
+    end
+
+    if infinityJumpEnabled and root then
+        if root.Velocity.Y < -clampFallSpeed then
+            root.Velocity = Vector3.new(root.Velocity.X, -clampFallSpeed, root.Velocity.Z)
+        end
+    end
+
+    if instaGrabEnabled and not isStealing then
+        local hrp = getHRP()
+        if hrp then
+            local nearest, bestDist = nil, math.huge
+            for _, data in pairs(animalCache) do
+                local d = (hrp.Position - data.worldPosition).Magnitude
+                if d < bestDist then bestDist = d; nearest = data end
+            end
+            if nearest and bestDist <= STEAL_R then
+                local prompt = promptCache[nearest.uid]
+                if prompt then executeSteal(prompt, nearest.name) end
+            end
+        end
+    end
+
+    if SETTINGS.LOCK_ENABLED and root then
+        local nearest, dist = nil, math.huge
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local d = (p.Character.HumanoidRootPart.Position - root.Position).Magnitude
+                if d < dist then dist = d; nearest = p.Character.HumanoidRootPart end
+            end
+        end
+        if nearest then
+            local dir = (nearest.Position - root.Position).Unit
+            root.AssemblyLinearVelocity = dir * SETTINGS.LOCK_SPEED
+        end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if infinityJumpEnabled and player.Character then
+        local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.Velocity = Vector3.new(hrp.Velocity.X, jumpForce, hrp.Velocity.Z) end
+    end
+end)
+
+-- Save & Load Config
+saveBtn.MouseButton1Click:Connect(function()
+    if writefile then
+        local data = {FOV = fovOn, Galaxy = galaxyOn, AntiBat = antiBatOn, AntiFling = antiFlingOn, InfJump = infinityJumpEnabled, NoAnim = noAnimToggled}
+        writefile(FILE_NAME, HttpService:JSONEncode(data))
+        saveBtn.Text = "SAVED!"
+        task.wait(0.8)
+        saveBtn.Text = "SAVE CONFIG"
+    end
+end)
+
+if isfile and isfile(FILE_NAME) then
+    local s, d = pcall(function() return HttpService:JSONDecode(readfile(FILE_NAME)) end)
+    if s and d then
+        fovOn = d.FOV or false
+        galaxyOn = d.Galaxy or false
+        antiBatOn = d.AntiBat or false
+        antiFlingOn = d.AntiFling or false
+        infinityJumpEnabled = d.InfJump or false
+        noAnimToggled = d.NoAnim or false
+        camera.FieldOfView = fovOn and 100 or 70
+        updateVisual(fovOn, fovInd, fovBase)
+        updateVisual(galaxyOn, galInd, galBase)
+        updateVisual(antiBatOn, batInd, batBase)
+        updateVisual(antiFlingOn, fliInd, fliBase)
+        updateVisual(infinityJumpEnabled, jumpInd, jumpBase)
+        updateVisual(noAnimToggled, noAnimInd, noAnimBase)
+        if noAnimToggled then startNoAnim() end
+    end
+end
+
+-- Final Auto Start
+applyAntiLagSettings(true)
+destroyAllAccessories()
+
+task.spawn(function()
+    task.wait(2)
+    local plots = Workspace:WaitForChild("Plots", 10)
+    if plots then
+        for _, plot in ipairs(plots:GetChildren()) do
+            if plot:IsA("Model") then scanPlot(plot) end
+        end
+        plots.ChildAdded:Connect(function(plot)
+            if plot:IsA("Model") then task.wait(0.5); scanPlot(plot) end
+        end)
+    end
+end)
+
+print("✅ keek duel script fully loaded!")
