@@ -1,15 +1,17 @@
+repeat task.wait() until game:IsLoaded()
+
 --// SERVICES //
-local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
-local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local camera = workspace.CurrentCamera
 
+local player = Players.LocalPlayer
+local camera = Workspace.CurrentCamera
 -- // [2] ANTI-LAG CONFIGURATION //
 local CONFIG = {
 	AntiLag = {
@@ -233,109 +235,92 @@ local function stopFloat()
     end
 end
 
---// AUTO PLAY LOGIC //
-local function stopAutoRight()
-    if autoRightConn then autoRightConn:Disconnect(); autoRightConn = nil end
-    autoRightPhase = 1
-    local hum = getHum()
-    if hum then hum:Move(Vector3.zero, false) end
-end
+--// AUTO PLAY (4 WAYPOINT SYSTEM) //
 
+local autoRightConn
+local autoLeftConn
+
+local autoRightIndex = 1
+local autoLeftIndex = 1
+
+-- RIGHT SIDE
 local function startAutoRight()
     if autoRightConn then autoRightConn:Disconnect() end
-    autoRightPhase = 1
+    autoRightIndex = 1
+
     autoRightConn = RunService.Heartbeat:Connect(function()
         if not AutoRightEnabled then return end
+
         local h, hum = getHRP(), getHum()
         if not h or not hum then return end
-        if autoRightPhase == 1 then
-            local d = Vector3.new(POSITION_R1.X - h.Position.X, 0, POSITION_R1.Z - h.Position.Z)
-            if d.Magnitude < 1 then autoRightPhase = 2; return end
-            local md = d.Unit
-            hum:Move(md, false)
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ForwardSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ForwardSpeed)
-        elseif autoRightPhase == 2 then
-            local d = Vector3.new(POSITION_REND.X - h.Position.X, 0, POSITION_REND.Z - h.Position.Z)
-            if d.Magnitude < 1 then
-                autoRightPhase = 0
-                hum:Move(Vector3.zero, false)
-                h.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-                task.delay(0.00, function() if AutoRightEnabled then autoRightPhase = 3 end end)
-                return
+
+        local target = rightWaypoints[autoRightIndex]
+        local direction = target - h.Position
+
+        if direction.Magnitude < 2 then
+            autoRightIndex += 1
+            if autoRightIndex > #rightWaypoints then
+                autoRightIndex = 1
             end
-            local md = d.Unit
-            hum:Move(md, false)
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ForwardSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ForwardSpeed)
-        elseif autoRightPhase == 3 then
-            local d = Vector3.new(POSITION_R1.X - h.Position.X, 0, POSITION_R1.Z - h.Position.Z)
-            if d.Magnitude < 1 then autoRightPhase = 4; return end
-            local md = d.Unit
-            hum:Move(md, false)
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ReturnSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ReturnSpeed)
-        elseif autoRightPhase == 4 then
-            local d = Vector3.new(POSITION_RFINAL.X - h.Position.X, 0, POSITION_RFINAL.Z - h.Position.Z)
-            if d.Magnitude < 1 then
-                AutoRightEnabled = false
-                stopAutoRight()
-                return
-            end
-            local md = d.Unit
-            hum:Move(md, false)
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ReturnSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ReturnSpeed)
+            return
         end
+
+        local moveDir = direction.Unit
+        hum:Move(moveDir, false)
+
+        h.AssemblyLinearVelocity = Vector3.new(
+            moveDir.X * Config.ForwardSpeed,
+            h.AssemblyLinearVelocity.Y,
+            moveDir.Z * Config.ForwardSpeed
+        )
+    end)
+end
+
+local function stopAutoRight()
+    if autoRightConn then
+        autoRightConn:Disconnect()
+        autoRightConn = nil
+    end
+end
+
+-- LEFT SIDE
+local function startAutoLeft()
+    if autoLeftConn then autoLeftConn:Disconnect() end
+    autoLeftIndex = 1
+
+    autoLeftConn = RunService.Heartbeat:Connect(function()
+        if not AutoLeftEnabled then return end
+
+        local h, hum = getHRP(), getHum()
+        if not h or not hum then return end
+
+        local target = leftWaypoints[autoLeftIndex]
+        local direction = target - h.Position
+
+        if direction.Magnitude < 2 then
+            autoLeftIndex += 1
+            if autoLeftIndex > #leftWaypoints then
+                autoLeftIndex = 1
+            end
+            return
+        end
+
+        local moveDir = direction.Unit
+        hum:Move(moveDir, false)
+
+        h.AssemblyLinearVelocity = Vector3.new(
+            moveDir.X * Config.ForwardSpeed,
+            h.AssemblyLinearVelocity.Y,
+            moveDir.Z * Config.ForwardSpeed
+        )
     end)
 end
 
 local function stopAutoLeft()
-    if autoLeftConn then autoLeftConn:Disconnect(); autoLeftConn = nil end
-    autoLeftPhase = 1
-    local hum = getHum()
-    if hum then hum:Move(Vector3.zero, false) end
-end
-
-local function startAutoLeft()
-    if autoLeftConn then autoLeftConn:Disconnect() end
-    autoLeftPhase = 1
-    autoLeftConn = RunService.Heartbeat:Connect(function()
-        if not AutoLeftEnabled then return end
-        local h, hum = getHRP(), getHum()
-        if not h or not hum then return end
-        if autoLeftPhase == 1 then
-            local d = Vector3.new(POSITION_L1.X - h.Position.X, 0, POSITION_L1.Z - h.Position.Z)
-            if d.Magnitude < 1 then autoLeftPhase = 2; return end
-            local md = d.Unit
-            hum:Move(md, false)
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ForwardSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ForwardSpeed)
-        elseif autoLeftPhase == 2 then
-            local d = Vector3.new(POSITION_LEND.X - h.Position.X, 0, POSITION_LEND.Z - h.Position.Z)
-            if d.Magnitude < 1 then
-                autoLeftPhase = 0
-                hum:Move(Vector3.zero, false)
-                h.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-                task.delay(0.00, function() if AutoLeftEnabled then autoLeftPhase = 3 end end)
-                return
-            end
-            local md = d.Unit
-            hum:Move(md, false)
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ForwardSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ForwardSpeed)
-        elseif autoLeftPhase == 3 then
-            local d = Vector3.new(POSITION_L1.X - h.Position.X, 0, POSITION_L1.Z - h.Position.Z)
-            if d.Magnitude < 1 then autoLeftPhase = 4; return end
-            local md = d.Unit
-            hum:Move(md, false)
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ReturnSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ReturnSpeed)
-        elseif autoLeftPhase == 4 then
-            local d = Vector3.new(POSITION_LFINAL.X - h.Position.X, 0, POSITION_LFINAL.Z - h.Position.Z)
-            if d.Magnitude < 1 then
-                AutoLeftEnabled = false
-                stopAutoLeft()
-                return
-            end
-            local md = d.Unit
-            hum:Move(md, false)
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ReturnSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ReturnSpeed)
-        end
-    end)
+    if autoLeftConn then
+        autoLeftConn:Disconnect()
+        autoLeftConn = nil
+    end
 end
 
 --// NO ANIMATION LOGIC //
@@ -532,7 +517,7 @@ sideMenu.Size = UDim2.new(0, 200, 0, 360)
 sideMenu.Position = UDim2.new(0, -250, 0.5, -180)
 sideMenu.BackgroundColor3 = GALAXY_DARK
 sideMenu.Parent = screenGui
-sideMenu.Visible = false
+sideMenu.Visible = true
 Instance.new("UICorner", sideMenu).CornerRadius = UDim.new(0, 15)
 local menuStroke = Instance.new("UIStroke", sideMenu)
 menuStroke.Color = GALAXY_PURPLE
