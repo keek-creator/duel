@@ -33,17 +33,21 @@ local dropEnabled = false
 local _wfConns = {}
 local Config = { ForwardSpeed = 59, ReturnSpeed = 28 }
 local rightWaypoints = {
-    Vector3.new(-473.04, -6.99, 29.71),
-    Vector3.new(-483.57, -5.10, 18.74),
-    Vector3.new(-475.00, -6.99, 26.43),
-    Vector3.new(-474.67, -6.94, 105.48),
+    Vector3.new(-476.16,-6.52,25.62),
+    Vector3.new(-483.04,-5.09,23.14),
+    Vector3.new(-488,-5,24),
+    Vector3.new(-493,-5,25),
+    Vector3.new(-473,-7,25),
+    Vector3.new(-474,-7,112),
 }
 
 local leftWaypoints = {
-    Vector3.new(-472.49, -7.00, 90.62),
-    Vector3.new(-484.62, -5.10, 100.37),
-    Vector3.new(-475.08, -7.00, 93.29),
-    Vector3.new(-474.22, -6.96, 16.18),
+    Vector3.new(-476.48,-6.28,92.73),
+    Vector3.new(-483.12,-4.95,94.80),
+    Vector3.new(-487,-5,95),
+    Vector3.new(-492,-5,95),
+    Vector3.new(-473,-7,95),
+    Vector3.new(-473,-7,11),
 }
 
 -- Auto-Play variables
@@ -254,6 +258,11 @@ local function startAutoRight()
         local h, hum = getHRP(), getHum()
         if not h or not hum then return end
 
+       local hum = getHum()
+if hum and hum.WalkSpeed < 23 then
+    task.wait(0.3) -- wait for grab
+end
+
         local target = rightWaypoints[autoRightIndex]
         local direction = target - h.Position
 
@@ -292,8 +301,12 @@ local function startAutoLeft()
         if not AutoLeftEnabled then return end
 
         local h, hum = getHRP(), getHum()
-        if not h or not hum then return end
+if not h or not hum then return end
 
+if hum.WalkSpeed < 23 then
+    task.wait(0.3)
+    return
+end
         local target = leftWaypoints[autoLeftIndex]
         local direction = target - h.Position
 
