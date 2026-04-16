@@ -367,7 +367,11 @@ end
 
 local function stopNoAnim()
     noAnimToggled = false
-    if animationConnect
+    if animationConnection then
+        animationConnection:Disconnect()
+        animationConnection = nil
+    end
+end
 
 
 --// AUTO GRAB LOGIC //
