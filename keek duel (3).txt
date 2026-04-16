@@ -33,17 +33,17 @@ local dropEnabled = false
 local _wfConns = {}
 local Config = { ForwardSpeed = 58, ReturnSpeed = 29 }
 local rightWaypoints = {
-    Vector3.new(-473.04, -6.99, 29.71),
-    Vector3.new(-484.98, -4.89, 21.21),
-    Vector3.new(-475.00, -6.99, 26.43),
-    Vector3.new(-474.67, -6.94, 105.48),
+    {pos = Vector3.new(-473.04, -6.99, 29.71), speed = 58},
+    {pos = Vector3.new(-484.98, -4.89, 21.21), speed = 58},
+    {pos = Vector3.new(-475.00, -6.99, 26.43), speed = 58},
+    {pos = Vector3.new(-474.67, -6.94, 105.48), speed = 29}, -- custom
 }
 
 local leftWaypoints = {
-    Vector3.new(-472.49, -7.00, 90.62),
-    Vector3.new(-484.41, -4.89, 99.02),
-    Vector3.new(-475.08, -7.00, 93.29),
-    Vector3.new(-474.22, -6.96, 16.18),
+    {pos = Vector3.new(-472.49, -7.00, 90.62), speed = 58},
+    {pos = Vector3.new(-484.41, -4.89, 99.02), speed = 58},
+    {pos = Vector3.new(-475.08, -7.00, 93.29), speed = 58},
+    {pos = Vector3.new(-474.22, -6.96, 16.18), speed = 29}, -- custom
 }
 
 -- Auto-Play variables
@@ -254,8 +254,7 @@ local function startAutoRight()
         local h, hum = getHRP(), getHum()
         if not h or not hum then return end
 
-        local target = rightWaypoints[autoRightIndex]
-        local direction = target - h.Position
+        
 
         if direction.Magnitude < 2 then
             autoRightIndex += 1
@@ -268,11 +267,19 @@ local function startAutoRight()
         local moveDir = direction.Unit
         hum:Move(moveDir, false)
 
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
+        local speed = Config.ForwardSpeed
+
+-- check if target is one of the special coords
+if (target - Vector3.new(-474.67, -6.94, 105.48)).Magnitude < 1
+or (target - Vector3.new(-474.22, -6.96, 16.18)).Magnitude < 1 then
+    speed = Config.ReturnSpeed -- 29
+end
+
+h.AssemblyLinearVelocity = Vector3.new(
+    moveDir.X * speed,
+    h.AssemblyLinearVelocity.Y,
+    moveDir.Z * speed
+)
     end)
 end
 
@@ -282,6 +289,12 @@ local function stopAutoRight()
         autoRightConn = nil
     end
 end
+
+local wp = rightWaypoints[autoRightIndex]
+local target = wp.pos
+local speed = wp.speed or Config.ForwardSpeed
+
+local direction = target - h.Position
 
 -- LEFT SIDE
 local function startAutoLeft()
@@ -294,8 +307,11 @@ local function startAutoLeft()
         local h, hum = getHRP(), getHum()
         if not h or not hum then return end
 
-        local target = leftWaypoints[autoLeftIndex]
-        local direction = target - h.Position
+        local wp = leftWaypoints[autoLeftIndex]
+local target = wp.pos
+local speed = wp.speed or Config.ForwardSpeed
+
+local direction = target - h.Position
 
         if direction.Magnitude < 2 then
             autoLeftIndex += 1
@@ -308,11 +324,19 @@ local function startAutoLeft()
         local moveDir = direction.Unit
         hum:Move(moveDir, false)
 
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
+        local speed = Config.ForwardSpeed
+
+-- check if target is one of the special coords
+if (target - Vector3.new(-474.67, -6.94, 105.48)).Magnitude < 1
+or (target - Vector3.new(-474.22, -6.96, 16.18)).Magnitude < 1 then
+    speed = Config.ReturnSpeed -- 29
+end
+
+h.AssemblyLinearVelocity = Vector3.new(
+    moveDir.X * speed,
+    h.AssemblyLinearVelocity.Y,
+    moveDir.Z * speed
+)
     end)
 end
 
