@@ -1,3 +1,32 @@
+local GS = 1
+local sg = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+print("SCRIPT EXECUTED")
+local C = {
+    white = Color3.new(1,1,1),
+    muted = Color3.fromRGB(150,150,150),
+    off = Color3.fromRGB(50,50,50),
+    border = Color3.fromRGB(100,100,100)
+}
+
+local function rc(obj, r)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, r)
+    c.Parent = obj
+end
+
+local function st(obj, thickness, color, transparency)
+    local s = Instance.new("UIStroke")
+    s.Thickness = thickness
+    s.Color = color
+    s.Transparency = transparency or 0
+    s.Parent = obj
+end
+
+local Connections = {}
+local Enabled = { AutoSteal = false }
+
+local function scanPlot() end
+
 repeat task.wait() until game:IsLoaded()
 
 --// SERVICES //
