@@ -375,7 +375,6 @@ end
 
 
 -- AUTO GRAB
-local ProgressBarFill, ProgressPercentLabel
 local isStealing         = false
 local stealStartTime     = nil
 local progressConnection = nil
