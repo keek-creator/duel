@@ -1,27 +1,6 @@
-local GS = 1
-local sg = screenGui
-
-local C = {
-    white = Color3.new(1,1,1),
-    muted = Color3.fromRGB(150,150,150),
-    off = Color3.fromRGB(50,50,50),
-    border = Color3.fromRGB(100,100,100)
-}
-
-local function rc(obj, r)
-    Instance.new("UICorner", obj).CornerRadius = UDim.new(0, r)
-end
-
-local function st(obj, thickness, color)
-    local s = Instance.new("UIStroke", obj)
-    s.Thickness = thickness
-    s.Color = color
-end
-
-local Connections = {}
-local Enabled = { AutoSteal = false }
-
 repeat task.wait() until game:IsLoaded()
+
+local GS = 1
 
 --// SERVICES //
 local Players = game:GetService("Players")
@@ -681,7 +660,7 @@ if not success then screenGui.Parent = player:WaitForChild("PlayerGui") end
 local PB_W = math.floor(390*GS)
 local PB_H = math.floor(52*GS)
 
-local progBar = Instance.new("Frame", sg)
+local progBar = Instance.new("Frame", screenGui)
 progBar.Size=UDim2.new(0,PB_W,0,PB_H); progBar.Position=UDim2.new(0.5,-PB_W/2,0.8,-PB_H/2)
 progBar.BackgroundColor3=Color3.fromRGB(14,14,14); progBar.BorderSizePixel=0
 rc(progBar, CR); st(progBar, 3, C.white, 0)
