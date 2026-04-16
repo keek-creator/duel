@@ -266,6 +266,7 @@ local function startAutoRight()
         end
 
         local moveDir = direction.Unit
+        hum.WalkSpeed = Config.ForwardSpeed
         hum:Move(moveDir, false)
 
         h.AssemblyLinearVelocity = Vector3.new(
@@ -623,6 +624,22 @@ waypointSpeedBox.TextColor3 = Color3.new(1,1,1)
 waypointSpeedBox.BackgroundColor3 = Color3.fromRGB(30,30,30)
 waypointSpeedBox.Parent = autoPanel
 Instance.new("UICorner", waypointSpeedBox)
+
+local function updateSpeeds()
+    local walk = tonumber(speedBox.Text)
+    local waypoint = tonumber(waypointSpeedBox.Text)
+
+    if walk then
+        Config.ForwardSpeed = walk
+    end
+
+    if waypoint then
+        Config.ForwardSpeed = waypoint
+    end
+end
+
+speedBox.FocusLost:Connect(updateSpeeds)
+waypointSpeedBox.FocusLost:Connect(updateSpeeds)
 
 local btnDirLeft = Instance.new("TextButton")
 btnDirLeft.Size = UDim2.new(0.4, 0, 0, 25); btnDirLeft.Position = UDim2.new(0.06, 0, 0.5, -12.5); btnDirLeft.BackgroundColor3 = Color3.fromRGB(30, 40, 60); btnDirLeft.Text = "LEFT"; btnDirLeft.TextColor3 = Color3.fromRGB(255, 255, 255); btnDirLeft.Font = Enum.Font.GothamBold; btnDirLeft.TextSize = 11; btnDirLeft.Parent = autoPanel
