@@ -603,6 +603,27 @@ autoPanel.Size = UDim2.new(0, 160, 0, 50); autoPanel.Position = UDim2.new(0, 0, 
 Instance.new("UICorner", autoPanel).CornerRadius = UDim.new(0, 8)
 Instance.new("UIStroke", autoPanel).Color = Color3.fromRGB(138, 43, 226)
 
+-- SPEED INPUTS (PUT HERE)
+local speedBox = Instance.new("TextBox")
+speedBox.Size = UDim2.new(0.9, 0, 0, 20)
+speedBox.Position = UDim2.new(0.05, 0, 0, 5)
+speedBox.PlaceholderText = "Walk Speed"
+speedBox.Text = tostring(Config.ForwardSpeed)
+speedBox.TextColor3 = Color3.new(1,1,1)
+speedBox.BackgroundColor3 = Color3.fromRGB(30,30,30)
+speedBox.Parent = autoPanel
+Instance.new("UICorner", speedBox)
+
+local waypointSpeedBox = Instance.new("TextBox")
+waypointSpeedBox.Size = UDim2.new(0.9, 0, 0, 20)
+waypointSpeedBox.Position = UDim2.new(0.05, 0, 0, 30)
+waypointSpeedBox.PlaceholderText = "Waypoint Speed"
+waypointSpeedBox.Text = tostring(Config.ForwardSpeed)
+waypointSpeedBox.TextColor3 = Color3.new(1,1,1)
+waypointSpeedBox.BackgroundColor3 = Color3.fromRGB(30,30,30)
+waypointSpeedBox.Parent = autoPanel
+Instance.new("UICorner", waypointSpeedBox)
+
 local btnDirLeft = Instance.new("TextButton")
 btnDirLeft.Size = UDim2.new(0.4, 0, 0, 25); btnDirLeft.Position = UDim2.new(0.06, 0, 0.5, -12.5); btnDirLeft.BackgroundColor3 = Color3.fromRGB(30, 40, 60); btnDirLeft.Text = "LEFT"; btnDirLeft.TextColor3 = Color3.fromRGB(255, 255, 255); btnDirLeft.Font = Enum.Font.GothamBold; btnDirLeft.TextSize = 11; btnDirLeft.Parent = autoPanel
 Instance.new("UICorner", btnDirLeft).CornerRadius = UDim.new(0, 6)
