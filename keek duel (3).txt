@@ -31,7 +31,10 @@ local FILE_NAME = "keekduelConfig.json"
 -- Galaxy Mover Variables
 local dropEnabled = false
 local _wfConns = {}
-local Config = { ForwardSpeed = 59, ReturnSpeed = 28 }
+local Config = {
+    NormalSpeed = 58,
+    SpecialSpeed = 28 -- speed for your 2 special coords
+}
 local rightWaypoints = {
     Vector3.new(-473.04, -6.99, 29.71),
     Vector3.new(-483.57, -5.10, 18.74),
