@@ -32,19 +32,24 @@ local FILE_NAME = "keekduelConfig.json"
 local dropEnabled = false
 local _wfConns = {}
 local Config = { ForwardSpeed = 59, ReturnSpeed = 28 }
-local rightWaypoints = {
-    Vector3.new(-473.04, -6.99, 29.71),
-    Vector3.new(-483.57, -5.10, 18.74),
-    Vector3.new(-475.00, -6.99, 26.43),
-    Vector3.new(-474.67, -6.94, 105.48),
-}
-
-local leftWaypoints = {
-    Vector3.new(-472.49, -7.00, 90.62),
-    Vector3.new(-484.62, -5.10, 100.37),
-    Vector3.new(-475.08, -7.00, 93.29),
-    Vector3.new(-474.22, -6.96, 16.18),
-}
+fadWaypoints = {
+            {position=Vector3.new(-475,-7,96),  speed=59},
+            {position=Vector3.new(-483,-5,95),  speed=59},
+            {position=Vector3.new(-487,-5,95),  speed=55},
+            {position=Vector3.new(-492,-5,95),  speed=55},
+            {position=Vector3.new(-473,-7,95),  speed=29},
+            {position=Vector3.new(-473,-7,11),  speed=29},
+        }
+    else
+        fadWaypoints = {
+            {position=Vector3.new(-474,-7,23),  speed=55},
+            {position=Vector3.new(-484,-5,24),  speed=55},
+            {position=Vector3.new(-488,-5,24),  speed=55},
+            {position=Vector3.new(-493,-5,25),  speed=55},
+            {position=Vector3.new(-473,-7,25),  speed=29},
+            {position=Vector3.new(-474,-7,112), speed=29},
+        }
+    end
 
 -- Auto-Play variables
 local AutoLeftEnabled = false
@@ -235,92 +240,154 @@ local function stopFloat()
     end
 end
 
---// AUTO PLAY (4 WAYPOINT SYSTEM) //
 
-local autoRightConn
-local autoLeftConn
+-- ============================================================
+-- FULL AUTO DUEL BACKEND  (logic ported from Silent Hub)
+-- Waypoints auto-selected based on which side the player is on.
+-- Pauses at grab waypoints (4 & 6) and waits for WalkSpeed to
+-- drop below 23 (game signals a grab) before continuing.
+-- ============================================================
+local fadWaypoints     = {}
+local fadCurrent       = 1
+local fadMoving        = false
+local fadWaiting       = false    -- waiting for a grab detection
+local fadGrabDone      = false    -- grab already detected this leg
+local fadMoveConn      = nil
+local fadSpeedConn     = nil
 
-local autoRightIndex = 1
-local autoLeftIndex = 1
+local function fadStop()
+    if fadMoveConn  then fadMoveConn:Disconnect();  fadMoveConn=nil  end
+    if fadSpeedConn then fadSpeedConn:Disconnect();  fadSpeedConn=nil end
+    fadMoving  = false
+    fadWaiting = false
+    fadGrabDone= false
+    Enabled.FullAutoDuel = false
+    if VisualSetters and VisualSetters.FullAutoDuel then VisualSetters.FullAutoDuel(false, true) end
+end
 
--- RIGHT SIDE
-local function startAutoRight()
-    if autoRightConn then autoRightConn:Disconnect() end
-    autoRightIndex = 1
-
-    autoRightConn = RunService.Heartbeat:Connect(function()
-        if not AutoRightEnabled then return end
-
-        local h, hum = getHRP(), getHum()
-        if not h or not hum then return end
-
-        local target = rightWaypoints[autoRightIndex]
-        local direction = target - h.Position
-
-        if direction.Magnitude < 2 then
-            autoRightIndex += 1
-            if autoRightIndex > #rightWaypoints then
-                autoRightIndex = 1
+local function fadMoveLoop()
+    if fadMoveConn then fadMoveConn:Disconnect() end
+    fadMoveConn = RunService.Stepped:Connect(function()
+        if not fadMoving or fadWaiting then return end
+        local c    = Player.Character if not c then return end
+        local root = c:FindFirstChild("HumanoidRootPart") if not root then return end
+        local wp   = fadWaypoints[fadCurrent]
+        local dist = (root.Position - wp.position).Magnitude
+        if dist < 5 then
+            -- Grab-wait waypoints
+            if (fadCurrent == 4 or fadCurrent == 6) and not fadGrabDone then
+                fadWaiting = true
+                root.AssemblyLinearVelocity = Vector3.new(0, root.AssemblyLinearVelocity.Y, 0)
+                local c2 = Player.Character if c2 then local h=c2:FindFirstChildOfClass("Humanoid") if h then h:Move(Vector3.zero,false) end end
+                return
             end
-            return
+            if fadCurrent == #fadWaypoints then
+                fadStop(); return
+            end
+            fadCurrent += 1
+        else
+            local dir = (wp.position - root.Position)
+            local md  = Vector3.new(dir.X, 0, dir.Z).Unit
+            local hum = c:FindFirstChildOfClass("Humanoid")
+            if hum then hum:Move(md, false) end
+            root.AssemblyLinearVelocity = Vector3.new(md.X*wp.speed, root.AssemblyLinearVelocity.Y, md.Z*wp.speed)
         end
-
-        local moveDir = direction.Unit
-        hum:Move(moveDir, false)
-
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
     end)
 end
 
-local function stopAutoRight()
-    if autoRightConn then
-        autoRightConn:Disconnect()
-        autoRightConn = nil
+local function startFullAutoDuel()
+    local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    fadMoving   = true
+    fadGrabDone = false
+    fadCurrent  = 1
+
+    -- Pick side based on which spawn is closer (mirrors Silent Hub logic)
+    if (root.Position - Vector3.new(-475,-7,96)).Magnitude > (root.Position - Vector3.new(-474,-7,23)).Magnitude then
+        fadWaypoints = {
+            {position=Vector3.new(-475,-7,96),  speed=59},
+            {position=Vector3.new(-483,-5,95),  speed=59},
+            {position=Vector3.new(-487,-5,95),  speed=55},
+            {position=Vector3.new(-492,-5,95),  speed=55},
+            {position=Vector3.new(-473,-7,95),  speed=29},
+            {position=Vector3.new(-473,-7,11),  speed=29},
+        }
+    else
+        fadWaypoints = {
+            {position=Vector3.new(-474,-7,23),  speed=55},
+            {position=Vector3.new(-484,-5,24),  speed=55},
+            {position=Vector3.new(-488,-5,24),  speed=55},
+            {position=Vector3.new(-493,-5,25),  speed=55},
+            {position=Vector3.new(-473,-7,25),  speed=29},
+            {position=Vector3.new(-474,-7,112), speed=29},
+        }
     end
+
+
+    -- Speed watcher: WalkSpeed < 23 means a grab happened
+    if fadSpeedConn then fadSpeedConn:Disconnect() end
+    fadSpeedConn = RunService.Heartbeat:Connect(function()
+        if not fadWaiting or fadGrabDone then return end
+        local c   = Player.Character if not c then return end
+        local hum = c:FindFirstChildOfClass("Humanoid") if not hum then return end
+        if hum.WalkSpeed < 23 then
+            task.wait(0.3)
+            fadWaiting  = false
+            fadGrabDone = true
+            -- Advance past the grab waypoint
+            if fadCurrent < #fadWaypoints then fadCurrent += 1 end
+        end
+    end)
+
+    fadMoveLoop()
 end
 
--- LEFT SIDE
-local function startAutoLeft()
-    if autoLeftConn then autoLeftConn:Disconnect() end
-    autoLeftIndex = 1
+local function stopFullAutoDuel()
+    fadStop()
+end
 
-    autoLeftConn = RunService.Heartbeat:Connect(function()
-        if not AutoLeftEnabled then return end
-
-        local h, hum = getHRP(), getHum()
-        if not h or not hum then return end
-
-        local target = leftWaypoints[autoLeftIndex]
-        local direction = target - h.Position
-
-        if direction.Magnitude < 2 then
-            autoLeftIndex += 1
-            if autoLeftIndex > #leftWaypoints then
-                autoLeftIndex = 1
+local function startAntiRagdoll()
+    if Connections.antiRagdoll then return end
+    Connections.antiRagdoll = RunService.Heartbeat:Connect(function()
+        if not Enabled.AntiRagdoll then return end
+        local char=Player.Character if not char then return end
+        local root=char:FindFirstChild("HumanoidRootPart")
+        local hum=char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            local s=hum:GetState()
+            if s==Enum.HumanoidStateType.Physics or s==Enum.HumanoidStateType.Ragdoll or s==Enum.HumanoidStateType.FallingDown then
+                hum:ChangeState(Enum.HumanoidStateType.Running)
+                workspace.CurrentCamera.CameraSubject=hum
+                pcall(function()
+                    local pm=Player.PlayerScripts:FindFirstChild("PlayerModule")
+                    if pm then require(pm:FindFirstChild("ControlModule")):Enable() end
+                end)
+                if root then root.Velocity=Vector3.zero; root.RotVelocity=Vector3.zero end
             end
-            return
         end
-
-        local moveDir = direction.Unit
-        hum:Move(moveDir, false)
-
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
+        for _,obj in ipairs(char:GetDescendants()) do
+            if obj:IsA("Motor6D") and not obj.Enabled then obj.Enabled=true end
+        end
     end)
 end
+local function stopAntiRagdoll()
+    if Connections.antiRagdoll then Connections.antiRagdoll:Disconnect(); Connections.antiRagdoll=nil end
+end
 
-local function stopAutoLeft()
-    if autoLeftConn then
-        autoLeftConn:Disconnect()
-        autoLeftConn = nil
-    end
+local function startSpeedWhileStealing()
+    if Connections.speedWhileStealing then return end
+    Connections.speedWhileStealing = RunService.Heartbeat:Connect(function()
+        if not Enabled.SpeedWhileStealing or not Player:GetAttribute("Stealing") then return end
+        local c=Player.Character if not c then return end
+        local h=c:FindFirstChild("HumanoidRootPart") if not h then return end
+        local md=getMovementDirection()
+        if md.Magnitude > 0.1 then
+            h.AssemblyLinearVelocity=Vector3.new(md.X*Values.StealingSpeedValue,h.AssemblyLinearVelocity.Y,md.Z*Values.StealingSpeedValue)
+        end
+    end)
+end
+local function stopSpeedWhileStealing()
+    if Connections.speedWhileStealing then Connections.speedWhileStealing:Disconnect(); Connections.speedWhileStealing=nil end
 end
 
 --// NO ANIMATION LOGIC //
