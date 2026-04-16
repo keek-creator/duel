@@ -506,9 +506,11 @@ screenGui.ResetOnSpawn = false
 local success, err = pcall(function() screenGui.Parent = CoreGui:FindFirstChild("RobloxGui") or CoreGui end)
 if not success then screenGui.Parent = player:WaitForChild("PlayerGui") end
 
-local GALAXY_BLACK = Color3.fromRGB(0, 0, 0)
-local GALAXY_DARK = Color3.fromRGB(10, 5, 20)
-local GALAXY_ACCENT = Color3.fromRGB(190, 100, 255)
+-- // DARK THEME OVERRIDE //
+local GALAXY_BLACK  = Color3.fromRGB(0, 0, 0)
+local GALAXY_DARK   = Color3.fromRGB(5, 5, 5)     -- Deeper charcoal/black 
+local GALAXY_ACCENT = Color3.fromRGB(100, 100, 100) -- Muted grey instead of bright purple 
+local GALAXY_PURPLE = Color3.fromRGB(40, 40, 40)   -- Darker border stroke [cite: 49, 78]
 
 local openBtn = Instance.new("TextButton")
 openBtn.Size = UDim2.new(0, 55, 0, 55)
