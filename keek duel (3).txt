@@ -248,7 +248,6 @@ local function fadStop()
     fadMoving  = false
     fadWaiting = false
     fadGrabDone= false
-    Enabled.FullAutoDuel = false
 end
 
 local function fadMoveLoop()
@@ -681,7 +680,18 @@ local function setVisual(btn, grad, stroke, state, onTxt, offTxt)
     stroke.Color = state and Color3.fromRGB(50, 255, 150) or Color3.fromRGB(138, 43, 226)
 end
 
-btnAuto.MouseButton1Click:Connect(function() if not checkAuto() then return end; AutoPlayEnabled = not AutoPlayEnabled; setVisual(btnAuto, gradAuto, strokeAuto, AutoPlayEnabled, "AUTO PLAY: ON", "AUTO PLAY: OFF"); if AutoPlayEnabled then if AutoPlayDirection == "Right" then AutoRightEnabled = true; startAutoRight() else AutoLeftEnabled = true; startAutoLeft() end else AutoRightEnabled = false; AutoLeftEnabled = false; stopAutoRight(); stopAutoLeft() end end)
+btnAuto.MouseButton1Click:Connect(function()
+    if not checkAuto() then return end
+
+    AutoPlayEnabled = not AutoPlayEnabled
+    setVisual(btnAuto, gradAuto, strokeAuto, AutoPlayEnabled, "AUTO PLAY: ON", "AUTO PLAY: OFF")
+
+    if AutoPlayEnabled then
+        startFullAutoDuel() -- ✅ USE NEW SYSTEM
+    else
+        stopFullAutoDuel()
+    end
+end)
 btnGrab.MouseButton1Click:Connect(function() if not checkGrab() then return end; instaGrabEnabled = not instaGrabEnabled; setVisual(btnGrab, gradGrab, strokeGrab, instaGrabEnabled, "AUTO GRAB: ON", "AUTO GRAB: OFF") end)
 btnFloat.MouseButton1Click:Connect(function() if not checkFloat() then return end; isFloating = not isFloating; setVisual(btnFloat, gradFloat, strokeFloat, isFloating, "FLOAT: ON", "FLOAT: OFF"); if isFloating then startFloat() else stopFloat() end end)
 btnDrop.MouseButton1Click:Connect(function() if not checkDrop() then return end; toggleDrop(not dropEnabled); setVisual(btnDrop, gradDrop, strokeDrop, dropEnabled, "DROP: ON", "DROP: OFF") end)
