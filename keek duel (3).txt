@@ -547,6 +547,33 @@ container.Parent = sideMenu
 local layout = Instance.new("UIListLayout", container)
 layout.Padding = UDim.new(0, 12); layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
+local speedBox = Instance.new("TextBox")
+speedBox.Size = UDim2.new(0.9, 0, 0, 32)
+speedBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+
+speedBox.Text = tostring(Config.ForwardSpeed)
+speedBox.PlaceholderText = "Enter Speed (10–200)"
+
+speedBox.TextColor3 = Color3.new(1,1,1)
+speedBox.Font = Enum.Font.GothamBold
+speedBox.TextSize = 14
+speedBox.Parent = container
+
+Instance.new("UICorner", speedBox).CornerRadius = UDim.new(0, 6)
+
+speedBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local num = tonumber(speedBox.Text)
+        if num then
+            num = math.clamp(num, 10, 200)
+            Config.ForwardSpeed = num
+            speedBox.Text = tostring(num)
+        else
+            speedBox.Text = tostring(Config.ForwardSpeed)
+        end
+    end
+end)
+
 local function createToggle(text)
     local frame = Instance.new("TextButton")
     frame.Size = UDim2.new(1, 0, 0, 34); frame.BackgroundTransparency = 1; frame.Text = ""; frame.Parent = container
