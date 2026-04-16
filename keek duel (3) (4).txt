@@ -28,6 +28,11 @@ local player = Players.LocalPlayer
 local LocalPlayer = player
 local FILE_NAME = "keekduelConfig.json"
 
+local Values = {
+    STEAL_DURATION = 1.5,
+    STEAL_RADIUS = 7
+}
+
 -- Galaxy Mover Variables
 local dropEnabled = false
 local _wfConns = {}
@@ -139,6 +144,15 @@ local function applyAntiLagSettings(enabled)
 end
 
 --// CORE FUNCTIONS //
+local function ResetProgressBar()
+    if ProgressPercentLabel then
+        ProgressPercentLabel.Text = "0%"
+    end
+    if ProgressBarFill then
+        ProgressBarFill.Size = UDim2.new(0,0,1,0)
+    end
+end
+
 local function getHRP()
     local c = player.Character
     return c and c:FindFirstChild("HumanoidRootPart")
