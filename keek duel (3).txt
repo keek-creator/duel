@@ -28,6 +28,9 @@ local player = Players.LocalPlayer
 local LocalPlayer = player
 local FILE_NAME = "keekduelConfig.json"
 
+local WalkSpeedValue = 58
+local CarrySpeedValue = 28
+
 -- Galaxy Mover Variables
 local dropEnabled = false
 local _wfConns = {}
@@ -673,6 +676,9 @@ end)
 
 RunService.Heartbeat:Connect(function()
     local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart"); local hum = char and char:FindFirstChild("Humanoid")
+if hum then
+        hum.WalkSpeed = WalkSpeedValue
+    end
     if root and hum then
         local currentTool = char:FindFirstChildOfClass("Tool")
         local holdingBat = currentTool and currentTool.Name:lower():find("bat")
