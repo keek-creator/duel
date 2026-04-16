@@ -32,19 +32,13 @@ local FILE_NAME = "keekduelConfig.json"
 local dropEnabled = false
 local _wfConns = {}
 local Config = { ForwardSpeed = 59, ReturnSpeed = 28 }
-local rightWaypoints = {
-    Vector3.new(-473.04, -6.99, 29.71),
-    Vector3.new(-483.57, -5.10, 18.74),
-    Vector3.new(-475.00, -6.99, 26.43),
-    Vector3.new(-474.67, -6.94, 105.48),
-}
+-- LEFT SIDE
+local POSITION_1  = Vector3.new(-476.48,-6.28, 92.73)
+local POSITION_2  = Vector3.new(-483.12,-4.95, 94.80)
 
-local leftWaypoints = {
-    Vector3.new(-472.49, -7.00, 90.62),
-    Vector3.new(-484.62, -5.10, 100.37),
-    Vector3.new(-475.08, -7.00, 93.29),
-    Vector3.new(-474.22, -6.96, 16.18),
-}
+-- RIGHT SIDE
+local POSITION_R1 = Vector3.new(-476.16,-6.52, 25.62)
+local POSITION_R2 = Vector3.new(-483.04,-5.09, 23.14)
 
 -- Auto-Play variables
 local AutoLeftEnabled = false
@@ -240,87 +234,119 @@ end
 local autoRightConn
 local autoLeftConn
 
-local autoRightIndex = 1
-local autoLeftIndex = 1
+local fadWaypoints     = {}
+local fadCurrent       = 1
+local fadMoving        = false
+local fadWaiting       = false
+local fadGrabDone      = false
+local fadMoveConn      = nil
+local fadSpeedConn     = nil
 
--- RIGHT SIDE
-local function startAutoRight()
-    if autoRightConn then autoRightConn:Disconnect() end
-    autoRightIndex = 1
+local function fadStop()
+    if fadMoveConn  then fadMoveConn:Disconnect();  fadMoveConn=nil  end
+    if fadSpeedConn then fadSpeedConn:Disconnect(); fadSpeedConn=nil end
+    fadMoving  = false
+    fadWaiting = false
+    fadGrabDone= false
+    Enabled.FullAutoDuel = false
+end
 
-    autoRightConn = RunService.Heartbeat:Connect(function()
-        if not AutoRightEnabled then return end
+local function fadMoveLoop()
+    if fadMoveConn then fadMoveConn:Disconnect() end
+    fadMoveConn = RunService.Stepped:Connect(function()
+        if not fadMoving or fadWaiting then return end
 
-        local h, hum = getHRP(), getHum()
-        if not h or not hum then return end
+        local c    = Player.Character if not c then return end
+        local root = c:FindFirstChild("HumanoidRootPart") if not root then return end
 
-        local target = rightWaypoints[autoRightIndex]
-        local direction = target - h.Position
+        local wp   = fadWaypoints[fadCurrent]
+        local dist = (root.Position - wp.position).Magnitude
 
-        if direction.Magnitude < 2 then
-            autoRightIndex += 1
-            if autoRightIndex > #rightWaypoints then
-                autoRightIndex = 1
+        if dist < 5 then
+            if (fadCurrent == 4 or fadCurrent == 6) and not fadGrabDone then
+                fadWaiting = true
+                root.AssemblyLinearVelocity = Vector3.new(0, root.AssemblyLinearVelocity.Y, 0)
+                return
             end
-            return
+
+            if fadCurrent == #fadWaypoints then
+                fadStop()
+                return
+            end
+
+            fadCurrent += 1
+        else
+            local dir = (wp.position - root.Position)
+            local md  = Vector3.new(dir.X, 0, dir.Z).Unit
+
+            local hum = c:FindFirstChildOfClass("Humanoid")
+            if hum then hum:Move(md, false) end
+
+            root.AssemblyLinearVelocity = Vector3.new(
+                md.X * wp.speed,
+                root.AssemblyLinearVelocity.Y,
+                md.Z * wp.speed
+            )
         end
-
-        local moveDir = direction.Unit
-        hum:Move(moveDir, false)
-
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
     end)
 end
 
-local function stopAutoRight()
-    if autoRightConn then
-        autoRightConn:Disconnect()
-        autoRightConn = nil
+local function startFullAutoDuel()
+    local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    fadMoving   = true
+    fadGrabDone = false
+    fadCurrent  = 1
+
+    -- AUTO SIDE DETECTION
+    if (root.Position - Vector3.new(-475,-7,96)).Magnitude >
+       (root.Position - Vector3.new(-474,-7,23)).Magnitude then
+
+        fadWaypoints = {
+            {position=Vector3.new(-475,-7,96),  speed=59},
+            {position=Vector3.new(-483,-5,95),  speed=59},
+            {position=Vector3.new(-487,-5,95),  speed=55},
+            {position=Vector3.new(-492,-5,95),  speed=55},
+            {position=Vector3.new(-473,-7,95),  speed=29},
+            {position=Vector3.new(-473,-7,11),  speed=29},
+        }
+
+    else
+        fadWaypoints = {
+            {position=Vector3.new(-474,-7,23),  speed=55},
+            {position=Vector3.new(-484,-5,24),  speed=55},
+            {position=Vector3.new(-488,-5,24),  speed=55},
+            {position=Vector3.new(-493,-5,25),  speed=55},
+            {position=Vector3.new(-473,-7,25),  speed=29},
+            {position=Vector3.new(-474,-7,112), speed=29},
+        }
     end
-end
 
--- LEFT SIDE
-local function startAutoLeft()
-    if autoLeftConn then autoLeftConn:Disconnect() end
-    autoLeftIndex = 1
+    -- DETECT GRAB (WalkSpeed drop)
+    if fadSpeedConn then fadSpeedConn:Disconnect() end
+    fadSpeedConn = RunService.Heartbeat:Connect(function()
+        if not fadWaiting or fadGrabDone then return end
 
-    autoLeftConn = RunService.Heartbeat:Connect(function()
-        if not AutoLeftEnabled then return end
+        local c   = Player.Character if not c then return end
+        local hum = c:FindFirstChildOfClass("Humanoid") if not hum then return end
 
-        local h, hum = getHRP(), getHum()
-        if not h or not hum then return end
+        if hum.WalkSpeed < 23 then
+            task.wait(0.3)
+            fadWaiting  = false
+            fadGrabDone = true
 
-        local target = leftWaypoints[autoLeftIndex]
-        local direction = target - h.Position
-
-        if direction.Magnitude < 2 then
-            autoLeftIndex += 1
-            if autoLeftIndex > #leftWaypoints then
-                autoLeftIndex = 1
+            if fadCurrent < #fadWaypoints then
+                fadCurrent += 1
             end
-            return
         end
-
-        local moveDir = direction.Unit
-        hum:Move(moveDir, false)
-
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
     end)
+
+    fadMoveLoop()
 end
 
-local function stopAutoLeft()
-    if autoLeftConn then
-        autoLeftConn:Disconnect()
-        autoLeftConn = nil
-    end
+local function stopFullAutoDuel()
+    fadStop()
 end
 
 --// NO ANIMATION LOGIC //
