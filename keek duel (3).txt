@@ -258,8 +258,10 @@ local function startAutoRight()
         local h, hum = getHRP(), getHum()
         if not h or not hum then return end
 
-        local target = rightWaypoints[autoRightIndex]
-        local direction = target - h.Position
+        local wp = rightWaypoints[autoRightIndex]
+local target = wp.pos
+local speed = wp.speed
+local direction = target - h.Position
 
         if direction.Magnitude < 2 then
             autoRightIndex += 1
@@ -273,10 +275,10 @@ local function startAutoRight()
         hum:Move(moveDir, false)
 
         h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
+    moveDir.X * speed,
+    h.AssemblyLinearVelocity.Y,
+    moveDir.Z * speed
+)
     end)
 end
 
@@ -298,8 +300,9 @@ local function startAutoLeft()
         local h, hum = getHRP(), getHum()
         if not h or not hum then return end
 
-        local target = leftWaypoints[autoLeftIndex]
-        local direction = target - h.Position
+        local wp = leftWaypoints[autoLeftIndex]
+local target = wp.pos
+local speed = wp.speed
 
         if direction.Magnitude < 2 then
             autoLeftIndex += 1
