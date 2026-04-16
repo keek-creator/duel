@@ -31,7 +31,10 @@ local FILE_NAME = "keekduelConfig.json"
 -- Galaxy Mover Variables
 local dropEnabled = false
 local _wfConns = {}
-local Config = { ForwardSpeed = 59, ReturnSpeed = 28 }
+local Config = {
+    FastSpeed = 59,
+    SlowSpeed = 29
+}
 local rightWaypoints = {
     Vector3.new(-476.16,-6.52,25.62),
     Vector3.new(-483.04,-5.09,23.14),
@@ -51,14 +54,16 @@ local leftWaypoints = {
 }
 
 -- Auto-Play variables
-local AutoLeftEnabled = false
-local AutoRightEnabled = false
-local autoLeftKey = Enum.KeyCode.Z
-local autoRightKey = Enum.KeyCode.C
-local autoLeftConnection = nil
-local autoRightConnection = nil
-local autoLeftPhase = 1
-local autoRightPhase = 1
+local AutoPlayEnabled = false
+local AutoPlaySide = "Right" -- "Left" or "Right"
+
+local autoIndex = 1
+local isGrabbing = false
+
+local Config = {
+    FastSpeed = 59,
+    SlowSpeed = 29
+}
 
 
 local FloatHeight = 10
@@ -256,6 +261,15 @@ local function startAutoRight()
         if not AutoRightEnabled then return end
 
         local h, hum = getHRP(), getHum()
+-- anti-looser speed system
+local speed = Config.FastSpeed
+
+-- if grabbing (important)
+if hum.WalkSpeed < 23 then
+    speed = Config.SlowSpeed
+    task.wait(0.3)
+    return
+end
         if not h or not hum then return end
 
        local hum = getHum()
@@ -278,10 +292,10 @@ end
         hum:Move(moveDir, false)
 
         h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
+    moveDir.X * speed,
+    h.AssemblyLinearVelocity.Y,
+    moveDir.Z * speed
+)
     end)
 end
 
@@ -301,6 +315,15 @@ local function startAutoLeft()
         if not AutoLeftEnabled then return end
 
         local h, hum = getHRP(), getHum()
+-- anti-looser speed system
+local speed = Config.FastSpeed
+
+-- if grabbing (important)
+if hum.WalkSpeed < 23 then
+    speed = Config.SlowSpeed
+    task.wait(0.3)
+    return
+end
 if not h or not hum then return end
 
 if hum.WalkSpeed < 23 then
@@ -322,10 +345,10 @@ end
         hum:Move(moveDir, false)
 
         h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
+    moveDir.X * speed,
+    h.AssemblyLinearVelocity.Y,
+    moveDir.Z * speed
+)
     end)
 end
 
