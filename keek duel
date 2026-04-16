@@ -488,7 +488,7 @@ end
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "keek duel"
 screenGui.ResetOnSpawn = false
-local success, err = pcall(function() screenGui.Parent = CoreGui:FindFirstChild("RobloxGui") or CoreGui end)
+local success, err = pcall(function() screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui") end)
 if not success then screenGui.Parent = player:WaitForChild("PlayerGui") end
 
 -- // DARK THEME OVERRIDE //
@@ -732,4 +732,3 @@ task.spawn(function()
     task.wait(2); local plots = workspace:WaitForChild("Plots", 10); if plots then for _, plot in ipairs(plots:GetChildren()) do if plot:IsA("Model") then scanPlot(plot) end end; plots.ChildAdded:Connect(function(plot) if plot:IsA("Model") then task.wait(0.5); scanPlot(plot) end end) end
 end)
 print("[MG Anti Lag] Auto-Executed: All optimizations active.")
-ons active.")
