@@ -367,7 +367,221 @@ end
 
 local function stopNoAnim()
     noAnimToggled = false
-    if animationConnection then
+    if animationConnect
+
+-- AUTO GRAB
+local ProgressBarFill, ProgressPercentLabel
+local isStealing         = false
+local stealStartTime     = nil
+local progressConnection = nil
+local StealData          = {}
+
+local function isMyPlotByName(pn)
+    local plots=workspace:FindFirstChild("Plots") if not plots then return false end
+    local plot=plots:FindFirstChild(pn)           if not plot  then return false end
+    local sign=plot:FindFirstChild("PlotSign")
+    if sign then
+        local yb=sign:FindFirstChild("YourBase")
+        if yb and yb:IsA("BillboardGui") then return yb.Enabled==true end
+    end
+    return false
+end
+
+local function findNearestPrompt()
+    local h=Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if not h then return nil end
+    local plots=workspace:FindFirstChild("Plots") if not plots then return nil end
+    local np,nd,nn=nil,math.huge,nil
+    for _,plot in ipairs(plots:GetChildren()) do
+        if isMyPlotByName(plot.Name) then continue end
+        local podiums=plot:FindFirstChild("AnimalPodiums") if not podiums then continue end
+        for _,pod in ipairs(podiums:GetChildren()) do
+            pcall(function()
+                local base=pod:FindFirstChild("Base")
+                local spawn=base and base:FindFirstChild("Spawn")
+                if spawn then
+                    local dist=(spawn.Position-h.Position).Magnitude
+                    if dist<nd and dist<=Values.STEAL_RADIUS then
+                        local att=spawn:FindFirstChild("PromptAttachment")
+                        if att then
+                            for _,ch in ipairs(att:GetChildren()) do
+                                if ch:IsA("ProximityPrompt") then np,nd,nn=ch,dist,pod.Name; break end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+    return np,nd,nn
+end
+
+local function ResetProgressBar()
+    if ProgressPercentLabel then ProgressPercentLabel.Text="0%" end
+    if ProgressBarFill      then ProgressBarFill.Size=UDim2.new(0,0,1,0) end
+end
+
+local function executeSteal(prompt,name)
+    if isStealing then return end
+    if not StealData[prompt] then
+        StealData[prompt]={hold={},trigger={},ready=true}
+        pcall(function()
+            if getconnections then
+                for _,c in ipairs(getconnections(prompt.PromptButtonHoldBegan)) do
+                    if c.Function then table.insert(StealData[prompt].hold,c.Function) end
+                end
+                for _,c in ipairs(getconnections(prompt.Triggered)) do
+                    if c.Function then table.insert(StealData[prompt].trigger,c.Function) end
+                end
+            end
+        end)
+    end
+    local data=StealData[prompt]
+    if not data.ready then return end
+    data.ready=false; isStealing=true; stealStartTime=tick()
+    if progressConnection then progressConnection:Disconnect() end
+    progressConnection=RunService.Heartbeat:Connect(function()
+        if not isStealing then progressConnection:Disconnect(); return end
+        local prog=math.clamp((tick()-stealStartTime)/Values.STEAL_DURATION,0,1)
+        if ProgressBarFill then ProgressBarFill.Size=UDim2.new(prog,0,1,0) end
+        if ProgressPercentLabel then ProgressPercentLabel.Text=math.floor(prog*100).."%" end
+    end)
+    task.spawn(function()
+        for _,f in ipairs(data.hold) do task.spawn(f) end
+        task.wait(Values.STEAL_DURATION)
+        for _,f in ipairs(data.trigger) do task.spawn(f) end
+        if progressConnection then progressConnection:Disconnect() end
+        ResetProgressBar(); data.ready=true; task.wait(0.3); isStealing=false
+    end)
+end
+
+local function startAutoSteal()
+    if Connections.autoSteal then return end
+    Connections.autoSteal=RunService.Heartbeat:Connect(function()
+        if not Enabled.AutoSteal or isStealing then return end
+        local p,_,n=findNearestPrompt()
+        if p then executeSteal(p,n) end
+    end)
+end
+local function stopAutoSteal()
+    if Connections.autoSteal then Connections.autoSteal:Disconnect(); Connections.autoSteal=nil end
+    isStealing=false; ResetProgressBar()
+end
+
+local savedAnimations={}
+local function startUnwalk()
+    local c=Player.Character if not c then return end
+    local hum=c:FindFirstChildOfClass("Humanoid")
+    if hum then for _,t in ipairs(hum:GetPlayingAnimationTracks()) do t:Stop() end end
+    local anim=c:FindFirstChild("Animate")
+    if anim then savedAnimations.Animate=anim:Clone(); anim:Destroy() end
+end
+local function stopUnwalk()
+    local c=Player.Character
+    if c and savedAnimations.Animate then savedAnimations.Animate:Clone().Parent=c; savedAnimations.Animate=nil end
+end
+
+local originalTransparency={}; local xrayEnabled=false
+local function enableOptimizer()
+    if getgenv and getgenv().OPTIMIZER_ACTIVE then return end
+    if getgenv then getgenv().OPTIMIZER_ACTIVE=true end
+    pcall(function() settings().Rendering.QualityLevel=Enum.QualityLevel.Level01; Lighting.GlobalShadows=false; Lighting.Brightness=3; Lighting.FogEnd=9e9 end)
+    pcall(function()
+        for _,obj in ipairs(workspace:GetDescendants()) do
+            pcall(function()
+                if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then obj:Destroy()
+                elseif obj:IsA("BasePart") then obj.CastShadow=false; obj.Material=Enum.Material.Plastic end
+            end)
+        end
+    end)
+    xrayEnabled=true
+    pcall(function()
+        for _,obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and obj.Anchored and (obj.Name:lower():find("base") or (obj.Parent and obj.Parent.Name:lower():find("base"))) then
+                originalTransparency[obj]=obj.LocalTransparencyModifier; obj.LocalTransparencyModifier=0.85
+            end
+        end
+    end)
+end
+local function disableOptimizer()
+    if getgenv then getgenv().OPTIMIZER_ACTIVE=false end
+    if xrayEnabled then
+        for part,v in pairs(originalTransparency) do if part then part.LocalTransparencyModifier=v end end
+        originalTransparency={}; xrayEnabled=false
+    end
+end
+
+local abActive=false; local _abMoveConn,_abNdConn,_abNdHumConn,_abTarget
+local abVisualSetter=nil
+
+local function _abApplyNoDie(char)
+    if _abNdConn then _abNdConn:Disconnect(); _abNdConn=nil end
+    if _abNdHumConn then _abNdHumConn:Disconnect(); _abNdHumConn=nil end
+    local hum=char and char:FindFirstChildOfClass("Humanoid") if not hum then return end
+    pcall(function() hum.MaxHealth=math.huge end); pcall(function() hum.Health=math.huge end)
+    _abNdHumConn=hum:GetPropertyChangedSignal("Health"):Connect(function()
+        if not abActive then return end
+        pcall(function() if hum.Health<1 then hum.Health=hum.MaxHealth end end)
+    end)
+    _abNdConn=RunService.Heartbeat:Connect(function()
+        if not abActive then return end
+        pcall(function()
+            if not hum or not hum.Parent then return end
+            if hum.Health<hum.MaxHealth then hum.Health=hum.MaxHealth end
+            local s=hum:GetState()
+            if s==Enum.HumanoidStateType.Dead or s==Enum.HumanoidStateType.Ragdoll or s==Enum.HumanoidStateType.FallingDown then
+                hum:ChangeState(Enum.HumanoidStateType.Running)
+            end
+        end)
+    end)
+end
+local function _abStop()
+    if _abMoveConn then _abMoveConn:Disconnect(); _abMoveConn=nil end
+    if _abNdConn   then _abNdConn:Disconnect();   _abNdConn=nil   end
+    if _abNdHumConn then _abNdHumConn:Disconnect(); _abNdHumConn=nil end
+    _abTarget=nil
+    pcall(function()
+        local hum=Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.MaxHealth=100; hum:Move(Vector3.zero,false) end
+    end)
+end
+local function _abStart()
+    _abStop()
+    local char=Player.Character if char then _abApplyNoDie(char) end
+    _abMoveConn=RunService.Heartbeat:Connect(function()
+        if not abActive then return end
+        pcall(function()
+            local myChar=Player.Character if not myChar then return end
+            local myHRP=myChar:FindFirstChild("HumanoidRootPart")
+            local myHum=myChar:FindFirstChildOfClass("Humanoid")
+            if not myHRP or not myHum then return end
+            local nearest,bestDist=nil,math.huge
+            for _,p in ipairs(Players:GetPlayers()) do
+                if p~=Player and p.Character then
+                    local oh=p.Character:FindFirstChild("HumanoidRootPart")
+                    if oh then local d=(myHRP.Position-oh.Position).Magnitude if d<bestDist then bestDist=d; nearest=p end end
+                end
+            end
+            _abTarget=nearest
+            if not _abTarget or not _abTarget.Character then return end
+            local tHRP=_abTarget.Character:FindFirstChild("HumanoidRootPart") if not tHRP then return end
+            local flat=Vector3.new((tHRP.Position-myHRP.Position).X,0,(tHRP.Position-myHRP.Position).Z)
+            if flat.Magnitude<3 then myHum:Move(Vector3.zero,false); return end
+            local unit=flat.Unit; myHum:Move(unit,false)
+            myHRP.AssemblyLinearVelocity=Vector3.new(unit.X*Values.BoostSpeed,myHRP.AssemblyLinearVelocity.Y,unit.Z*Values.BoostSpeed)
+            pcall(function() myHRP.CFrame=CFrame.new(myHRP.Position,myHRP.Position+flat) end)
+        end)
+    end)
+end
+local function abToggle()
+    abActive=not abActive
+    if abActive then _abStart() else _abStop() end
+    if abVisualSetter then abVisualSetter(abActive) end
+end
+Player.CharacterAdded:Connect(function(nc)
+    if not abActive then return end
+    task.wait(0.5); _abApplyNoDie(nc); _abStart()
+end)ion then
         animationConnection:Disconnect()
         animationConnection = nil
     end
@@ -376,84 +590,6 @@ local function stopNoAnim()
         local hum = char:FindFirstChildOfClass("Humanoid")
         if hum then hum:ChangeState(Enum.HumanoidStateType.Running) end
     end
-end
-
---// AUTO GRAB LOGIC //
-pcall(function()
-    local rep = game:GetService("ReplicatedStorage")
-    local datas = rep:FindFirstChild("Datas")
-    if datas then
-        local animals = datas:FindFirstChild("Animals")
-        if animals then AnimalsData = require(animals) end
-    end
-end)
-
-local function isMyBase(plotName)
-    local plot = workspace.Plots and workspace.Plots:FindFirstChild(plotName)
-    if not plot then return false end
-    local sign = plot:FindFirstChild("PlotSign")
-    if not sign then return false end
-    local yb = sign:FindFirstChild("YourBase")
-    return yb and yb:IsA("BillboardGui") and yb.Enabled == true
-end
-
-local function scanPlot(plot)
-    if not plot or not plot:IsA("Model") then return end
-    if isMyBase(plot.Name) then return end
-    local podiums = plot:FindFirstChild("AnimalPodiums")
-    if not podiums then return end
-    for _, pod in ipairs(podiums:GetChildren()) do
-        if pod:IsA("Model") and pod:FindFirstChild("Base") then
-            local name = "Unknown"
-            local spawn = pod.Base:FindFirstChild("Spawn")
-            if spawn then
-                for _, child in ipairs(spawn:GetChildren()) do
-                    if child:IsA("Model") and child.Name ~= "PromptAttachment" then
-                        name = child.Name
-                        local info = AnimalsData[name]
-                        if info and info.DisplayName then name = info.DisplayName end
-                        break
-                    end
-                end
-            end
-            table.insert(animalCache, {
-                name = name, plot = plot.Name, slot = pod.Name,
-                worldPosition = pod:GetPivot().Position, uid = plot.Name .. "*" .. pod.Name,
-            })
-        end
-    end
-end
-
-local function findPrompt(ad)
-    if not ad then return nil end
-    local plots = workspace:FindFirstChild("Plots")
-    if not plots then return nil end
-    local plot = plots:FindFirstChild(ad.plot)
-    if not plot then return nil end
-    local pods = plot:FindFirstChild("AnimalPodiums")
-    if not pods then return nil end
-    local pod = pods:FindFirstChild(ad.slot)
-    if not pod then return nil end
-    local base = pod:FindFirstChild("Base")
-    if not base then return nil end
-    local sp = base:FindFirstChild("Spawn")
-    if not sp then return nil end
-    local att = sp:FindFirstChild("PromptAttachment")
-    if not att then return nil end
-    for _, p in ipairs(att:GetChildren()) do
-        if p:IsA("ProximityPrompt") then promptCache[ad.uid] = p; return p end
-    end
-end
-
-local function execSteal(prompt)
-    IsStealing = true
-    task.spawn(function()
-        task.wait(0.2)
-        fireproximityprompt(prompt)
-        task.wait(0.01)
-        IsStealing = false
-    end)
-    return true
 end
 
 --// SILENT SWING & LOCK //
