@@ -76,9 +76,9 @@ local tpDownActive = false
 local AutoPlayEnabled = false
 local AutoPlayDirection = "Right"
 
-local SETTINGS = {
+SETTINGS = {
     LOCK_ENABLED = false,
-    LOCK_SPEED = 57,
+    LOCK_SPEED = CarrySpeedValue,
 }
 
 -- keek duel Logic Variables
@@ -540,8 +540,33 @@ container.Size = UDim2.new(0.9, 0, 0.82, 0)
 container.Position = UDim2.new(0.05, 0, 0.14, 0)
 container.BackgroundTransparency = 1
 container.Parent = sideMenu
+
 local layout = Instance.new("UIListLayout", container)
-layout.Padding = UDim.new(0, 12); layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.Padding = UDim.new(0, 12)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local function createInputBox(placeholder, default, callback)
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(1, 0, 0, 30)
+    box.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    box.TextColor3 = Color3.new(1,1,1)
+    box.PlaceholderText = placeholder
+    box.Text = tostring(default)
+    box.Font = Enum.Font.GothamBold
+    box.TextSize = 14
+    box.Parent = container
+
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0,6)
+
+    box.FocusLost:Connect(function()
+        local num = tonumber(box.Text)
+        if num then
+            callback(num)
+        else
+            box.Text = tostring(default)
+        end
+    end)
+end
 
 local function createToggle(text)
     local frame = Instance.new("TextButton")
@@ -675,10 +700,18 @@ RunService.Stepped:Connect(function()
 end)
 
 RunService.Heartbeat:Connect(function()
-    local char = player.Character; local root = char and char:FindFirstChild("HumanoidRootPart"); local hum = char and char:FindFirstChild("Humanoid")
-if hum then
+    local char = player.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChild("Humanoid")
+
+    -- Walk speed
+    if hum then
         hum.WalkSpeed = WalkSpeedValue
     end
+
+    -- Carry / lock speed
+    SETTINGS.LOCK_SPEED = CarrySpeedValue
+
     if root and hum then
         local currentTool = char:FindFirstChildOfClass("Tool")
         local holdingBat = currentTool and currentTool.Name:lower():find("bat")
