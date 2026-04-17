@@ -31,7 +31,10 @@ local FILE_NAME = "keekduelConfig.json"
 -- Galaxy Mover Variables
 local dropEnabled = false
 local _wfConns = {}
-local Config = { ForwardSpeed = 59, ReturnSpeed = 28 }
+Config = {
+    ForwardSpeed = 58,
+    SlowSpeed = 29.4
+}
 local rightWaypoints = {
     Vector3.new(-473.04, -6.99, 29.71),
     Vector3.new(-483.57, -5.10, 18.74),
@@ -268,11 +271,13 @@ local function startAutoRight()
         local moveDir = direction.Unit
         hum:Move(moveDir, false)
 
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
+        local speed = (autoRightIndex >= 3) and Config.SlowSpeed or Config.ForwardSpeed
+
+h.AssemblyLinearVelocity = Vector3.new(
+    moveDir.X * speed,
+    h.AssemblyLinearVelocity.Y,
+    moveDir.Z * speed
+)
     end)
 end
 
@@ -308,11 +313,13 @@ local function startAutoLeft()
         local moveDir = direction.Unit
         hum:Move(moveDir, false)
 
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
+        local speed = (autoLeftIndex >= 3) and Config.SlowSpeed or Config.ForwardSpeed
+
+h.AssemblyLinearVelocity = Vector3.new(
+    moveDir.X * speed,
+    h.AssemblyLinearVelocity.Y,
+    moveDir.Z * speed
+)
     end)
 end
 
