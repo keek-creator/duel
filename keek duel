@@ -972,4 +972,24 @@ destroyAllAccessories()
 task.spawn(function()
     task.wait(2); local plots = workspace:WaitForChild("Plots", 10); if plots then for _, plot in ipairs(plots:GetChildren()) do if plot:IsA("Model") then scanPlot(plot) end end; plots.ChildAdded:Connect(function(plot) if plot:IsA("Model") then task.wait(0.5); scanPlot(plot) end end) end
 end)
+
+resetBtn.MouseButton1Click:Connect(function()
+    if delfile and isfile(FILE_NAME) then
+        delfile(FILE_NAME)
+    end
+
+    openBtn.Position = UDim2.new(0, 20, 0.5, -27)
+
+    frameAuto.Position = UDim2.new(0.3, 0, 0.3, 0)
+    frameGrab.Position = UDim2.new(0.6, 0, 0.3, 0)
+    frameDrop.Position = UDim2.new(0.3, 0, 0.45, 0)
+    frameFloat.Position = UDim2.new(0.45, 0, 0.45, 0)
+    frameTP.Position = UDim2.new(0.6, 0, 0.45, 0)
+    frameLock.Position = UDim2.new(0.3, 0, 0.60, 0)
+
+    resetBtn.Text = "RESET DONE"
+    task.wait(0.5)
+    resetBtn.Text = "RESET CONFIG"
+end)
+
 print("[MG Anti Lag] Auto-Executed: All optimizations active.")
