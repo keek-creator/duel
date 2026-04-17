@@ -592,7 +592,7 @@ Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 6)
 --// FLOATING BARS UI (Galaxy Mover) //
 local function createFloatingBar(name, defaultText, startPos)
     local frame = Instance.new("Frame")
-    frame.Name = name; frame.Size = UDim2.new(0, 160, 0, 40); frame.Position = startPos; frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255); frame.BorderSizePixel = 0; frame.Active = true; frame.Parent = sg or screenGui
+  frame.Name = name; frame.Size = UDim2.new(0, 160, 0, 40); frame.Position = startPos; frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255); frame.BorderSizePixel = 0; frame.Active = false; frame.Parent = sg or screenGui
     local uiGradient = Instance.new("UIGradient")
     uiGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Color3.fromRGB(26, 11, 46)), ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 5, 20))}; uiGradient.Rotation = 45; uiGradient.Parent = frame
     local uiCorner = Instance.new("UICorner"); uiCorner.CornerRadius = UDim.new(0, 8); uiCorner.Parent = frame
