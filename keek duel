@@ -35,63 +35,6 @@ Config = {
     ForwardSpeed = 58,
     SlowSpeed = 29.4
 }
-
-local Connections = {}
-local antiRagdollEnabled = false
-
-local function startAntiRagdoll()
-    if Connections.antiRagdoll then return end
-    Connections.antiRagdoll = RunService.Heartbeat:Connect(function()
-        if not antiRagdollEnabled then return end
-
-        local char = LocalPlayer.Character
-        if not char then return end
-
-        local root = char:FindFirstChild("HumanoidRootPart")
-        local hum = char:FindFirstChildOfClass("Humanoid")
-
-        if hum then
-            local humState = hum:GetState()
-
-            if humState == Enum.HumanoidStateType.Physics
-            or humState == Enum.HumanoidStateType.Ragdoll
-            or humState == Enum.HumanoidStateType.FallingDown then
-
-                hum:ChangeState(Enum.HumanoidStateType.Running)
-                workspace.CurrentCamera.CameraSubject = hum
-
-                pcall(function()
-                    local PlayerModule = LocalPlayer.PlayerScripts:FindFirstChild("PlayerModule")
-                    if PlayerModule then
-                        local Controls = require(PlayerModule:FindFirstChild("ControlModule"))
-                        Controls:Enable()
-                    end
-                end)
-
-                if root then
-                    root.Velocity = Vector3.new(0, 0, 0)
-                    root.RotVelocity = Vector3.new(0, 0, 0)
-                end
-            end
-        end
-
-        for _, obj in ipairs(char:GetDescendants()) do
-            if obj:IsA("Motor6D") and obj.Enabled == false then
-                obj.Enabled = true
-            end
-        end
-    end)
-end
-
-local function stopAntiRagdoll()
-    if Connections.antiRagdoll then
-        Connections.antiRagdoll:Disconnect()
-        Connections.antiRagdoll = nil
-    end
-end
-
-startAntiRagdoll()
-
 local rightWaypoints = {
     Vector3.new(-473.04, -6.99, 29.71),
     Vector3.new(-486.93, -4.64, 19.35),
@@ -640,7 +583,6 @@ local antiFlingToggle, fliInd, fliBase = createToggle("ANTI-FLING")
 local infJumpToggle, jumpInd, jumpBase = createToggle("INFINITE JUMP")
 local noAnimToggle, noAnimInd, noAnimBase = createToggle("NO ANIMATION")
 local noAnimToggle, noAnimInd, noAnimBase = createToggle("NO ANIMATION")
-local antiRagdollToggle, antiRagdollInd, antiRagdollBase = createToggle("ANTI RAGDOLL")
 
 local saveBtn = Instance.new("TextButton")
 saveBtn.Size = UDim2.new(0.9, 0, 0, 32); saveBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0); saveBtn.Text = "SAVE CONFIG"; saveBtn.TextColor3 = Color3.new(1, 1, 1); saveBtn.Font = Enum.Font.LuckiestGuy; saveBtn.TextSize = 14; saveBtn.Parent = container
@@ -729,16 +671,6 @@ antiBatToggle.MouseButton1Click:Connect(function() antiBatOn = not antiBatOn; up
 antiFlingToggle.MouseButton1Click:Connect(function() antiFlingOn = not antiFlingOn; updateVisual(antiFlingOn, fliInd, fliBase) end)
 infJumpToggle.MouseButton1Click:Connect(function() infinityJumpEnabled = not infinityJumpEnabled; updateVisual(infinityJumpEnabled, jumpInd, jumpBase) end)
 noAnimToggle.MouseButton1Click:Connect(function() if not noAnimToggled then startNoAnim() else stopNoAnim() end; updateVisual(noAnimToggled, noAnimInd, noAnimBase) end)
-antiRagdollToggle.MouseButton1Click:Connect(function()
-    antiRagdollEnabled = not antiRagdollEnabled
-    updateVisual(antiRagdollEnabled, antiRagdollInd, antiRagdollBase)
-
-    if antiRagdollEnabled then
-        startAntiRagdoll()
-    else
-        stopAntiRagdoll()
-    end
-end)
 
 local function setVisual(btn, grad, stroke, state, onTxt, offTxt)
     btn.Text = state and onTxt or offTxt; btn.TextColor3 = state and Color3.new(1,1,1) or Color3.fromRGB(200, 180, 255)
