@@ -1007,13 +1007,7 @@ if isfile and isfile(FILE_NAME) then
 
         if noAnimToggled then startNoAnim() end
 
-        updateVisual(fovOn, fovInd, fovBase)
-        updateVisual(galaxyOn, galInd, galBase)
-        updateVisual(antiBatOn, batInd, batBase)
-        updateVisual(antiFlingOn, fliInd, fliBase)
-        updateVisual(infinityJumpEnabled, jumpInd, jumpBase)
-        updateVisual(noAnimToggled, noAnimInd, noAnimBase)
-    end
+        end
 end
 
 --// AUTO-EXECUTION //
