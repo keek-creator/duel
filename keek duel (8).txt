@@ -10,6 +10,18 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local function updateVisual(on, circle, bg)
+    if not circle or not bg then return end
+
+    TweenService:Create(circle, TweenInfo.new(0.25), {
+        Position = on and UDim2.new(1, -17, 0.5, -8) or UDim2.new(0, 1, 0.5, -8)
+    }):Play()
+
+    TweenService:Create(bg, TweenInfo.new(0.25), {
+        BackgroundColor3 = on and Color3.fromRGB(120, 80, 255) or Color3.fromRGB(50, 50, 60)
+    }):Play()
+end
+
 local player = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
 -- // [2] ANTI-LAG CONFIGURATION //
