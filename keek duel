@@ -28,6 +28,129 @@ local player = Players.LocalPlayer
 local LocalPlayer = player
 local FILE_NAME = "keekduelConfig.json"
 
+--// ANTI RAGDOLL //
+local anti = {}
+local antiMode = nil
+local ragConns = {}
+local charCache = {}
+local antiRagdollEnabled = true -- toggle
+
+local function cacheChar()
+    local c = player.Character
+    if not c then return false end
+    local h = c:FindFirstChildOfClass("Humanoid")
+    local r = c:FindFirstChild("HumanoidRootPart")
+    if not h or not r then return false end
+    charCache = {
+        char = c,
+        hum = h,
+        root = r
+    }
+    return true
+end
+
+local function killConns()
+    for _, c in pairs(ragConns) do
+        pcall(function() c:Disconnect() end)
+    end
+    ragConns = {}
+end
+
+local function isRagdoll()
+    if not charCache.hum then return false end
+    local s = charCache.hum:GetState()
+    if s == Enum.HumanoidStateType.Physics 
+    or s == Enum.HumanoidStateType.Ragdoll 
+    or s == Enum.HumanoidStateType.FallingDown then
+        return true
+    end
+
+    local et = player:GetAttribute("RagdollEndTime")
+    if et then
+        local n = workspace:GetServerTimeNow()
+        if (et - n) > 0 then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function removeCons()
+    if not charCache.char then return end
+    for _, d in pairs(charCache.char:GetDescendants()) do
+        if d:IsA("BallSocketConstraint") 
+        or (d:IsA("Attachment") and string.find(d.Name, "RagdollAttachment")) then
+            pcall(function() d:Destroy() end)
+        end
+    end
+end
+
+local function forceExit()
+    if not charCache.hum or not charCache.root then return end
+
+    pcall(function()
+        player:SetAttribute("RagdollEndTime", workspace:GetServerTimeNow())
+    end)
+
+    if charCache.hum.Health > 0 then
+        charCache.hum:ChangeState(Enum.HumanoidStateType.Running)
+    end
+
+    charCache.root.Anchored = false
+    charCache.root.AssemblyLinearVelocity = Vector3.zero
+end
+
+local function antiLoop()
+    while antiMode == "v1" and charCache.hum do
+        task.wait()
+        if isRagdoll() then
+            removeCons()
+            forceExit()
+        end
+    end
+end
+
+local function setupCam()
+    if not charCache.hum then return end
+    table.insert(ragConns, RunService.RenderStepped:Connect(function()
+        if antiMode ~= "v1" then return end
+        local cam = workspace.CurrentCamera
+        if cam and charCache.hum and cam.CameraSubject ~= charCache.hum then
+            cam.CameraSubject = charCache.hum
+        end
+    end))
+end
+
+local function onChar()
+    task.wait(0.5)
+    if not antiMode then return end
+    if cacheChar() then
+        setupCam()
+        task.spawn(antiLoop)
+    end
+end
+
+function anti.Enable()
+    if antiMode == "v1" then return end
+    if not cacheChar() then return end
+
+    antiMode = "v1"
+    table.insert(ragConns, player.CharacterAdded:Connect(onChar))
+
+    setupCam()
+    task.spawn(antiLoop)
+
+    print("anti ragdoll on")
+end
+
+function anti.Disable()
+    antiMode = nil
+    killConns()
+    charCache = {}
+    print("anti ragdoll off")
+end
+
 -- Galaxy Mover Variables
 local dropEnabled = false
 local _wfConns = {}
