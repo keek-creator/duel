@@ -497,6 +497,7 @@ screenGui.Name = "keek duel"
 screenGui.ResetOnSpawn = false
 local success, err = pcall(function() screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui") end)
 if not success then screenGui.Parent = player:WaitForChild("PlayerGui") end
+print("GUI LOADED")
 
 -- // DARK THEME OVERRIDE //
 local GALAXY_BLACK  = Color3.fromRGB(0, 0, 0)
