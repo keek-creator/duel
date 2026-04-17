@@ -699,14 +699,48 @@ local layout = Instance.new("UIListLayout", container)
 layout.Padding = UDim.new(0, 10)
 
 local function createToggle(text)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, 0, 0, 30)
-    button.BackgroundColor3 = Color3.fromRGB(40,40,60)
-    button.Text = text
-    button.TextColor3 = Color3.new(1,1,1)
+    local button = Instance.new("Frame")
+    button.Size = UDim2.new(1, 0, 0, 36)
+    button.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
     button.Parent = container
 
-    return button, button, button
+    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 8)
+
+    local stroke = Instance.new("UIStroke", button)
+    stroke.Color = Color3.fromRGB(60, 60, 80)
+    stroke.Thickness = 1.5
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(200, 200, 220)
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = button
+
+    local toggleBg = Instance.new("Frame")
+    toggleBg.Size = UDim2.new(0, 36, 0, 18)
+    toggleBg.Position = UDim2.new(1, -45, 0.5, -9)
+    toggleBg.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    toggleBg.Parent = button
+    Instance.new("UICorner", toggleBg).CornerRadius = UDim.new(1, 0)
+
+    local toggleCircle = Instance.new("Frame")
+    toggleCircle.Size = UDim2.new(0, 16, 0, 16)
+    toggleCircle.Position = UDim2.new(0, 1, 0.5, -8)
+    toggleCircle.BackgroundColor3 = Color3.fromRGB(200, 200, 220)
+    toggleCircle.Parent = toggleBg
+    Instance.new("UICorner", toggleCircle).CornerRadius = UDim.new(1, 0)
+
+    local click = Instance.new("TextButton")
+    click.Size = UDim2.new(1, 0, 1, 0)
+    click.BackgroundTransparency = 1
+    click.Text = ""
+    click.Parent = button
+
+    return click, toggleCircle, toggleBg
 end
 
 local fovToggle, fovInd, fovBase = createToggle("FOV (100)")
@@ -782,10 +816,7 @@ btnDirLeft.MouseButton1Click:Connect(function() AutoPlayDirection = "Left"; btnD
 btnDirRight.MouseButton1Click:Connect(function() AutoPlayDirection = "Right"; btnDirRight.BackgroundColor3 = Color3.fromRGB(138, 43, 226); btnDirLeft.BackgroundColor3 = Color3.fromRGB(30, 40, 60); if AutoPlayEnabled then stopAutoLeft(); AutoLeftEnabled = false; AutoRightEnabled = true; startAutoRight() end end)
 
 --// UI CONNECTIONS & PERSISTENCE //
-local function updateVisual(on, ind, base)
-    TweenService:Create(ind, TweenInfo.new(0.25), {Position = on and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play()
-    TweenService:Create(base, TweenInfo.new(0.25), {BackgroundColor3 = on and GALAXY_PURPLE or Color3.fromRGB(40, 40, 60)}):Play()
-end
+
 
 openBtn.MouseButton1Click:Connect(function()
     menuOpen = not menuOpen
@@ -806,7 +837,15 @@ galaxyToggle.MouseButton1Click:Connect(function()
         Lighting.Brightness, Lighting.ClockTime, Lighting.ExposureCompensation = 0, 0, -2; Lighting.OutdoorAmbient = Color3.fromRGB(0, 0, 0)
     else
         if Lighting:FindFirstChild("GalaxySky") then Lighting.GalaxySky:Destroy() end
-        Lighting.Brightness, Lighting.ClockTime, Lighting.ExposureCompensation = defBrightness, defClock, 0; Lighting.OutdoorAmbient = defAmbient
+        Lighting.Brightness, Lighting.ClockTime, Lighting.ExposureCompensation = defBrightness, defClock, 0; Lighting.OutdoorAlocal function updateVisual(on, circle, bg)
+    TweenService:Create(circle, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {
+        Position = on and UDim2.new(1, -17, 0.5, -8) or UDim2.new(0, 1, 0.5, -8)
+    }):Play()
+
+    TweenService:Create(bg, TweenInfo.new(0.25), {
+        BackgroundColor3 = on and Color3.fromRGB(120, 80, 255) or Color3.fromRGB(50, 50, 60)
+    }):Play()
+endmbient = defAmbient
     end
     updateVisual(galaxyOn, galInd, galBase)
 end)
