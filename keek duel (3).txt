@@ -31,15 +31,16 @@ local FILE_NAME = "keekduelConfig.json"
 -- Galaxy Mover Variables
 local dropEnabled = false
 local _wfConns = {}
-local Config = { ForwardSpeed = 59, ReturnSpeed = 28 }
-    fadWaypoints = {
-            {position=Vector3.new(-475,-7,96),  speed=59},
-            {position=Vector3.new(-483,-5,95),  speed=59},
-            {position=Vector3.new(-487,-5,95),  speed=55},
-            {position=Vector3.new(-492,-5,95),  speed=55},
-            {position=Vector3.new(-473,-7,95),  speed=29},
-            {position=Vector3.new(-473,-7,11),  speed=29},
-        }
+Config = { ForwardSpeed = 59, ReturnSpeed = 28 }
+
+local fadWaypoints = {
+    {position=Vector3.new(-475,-7,96), speed=59},
+    {position=Vector3.new(-483,-5,95), speed=59},
+    {position=Vector3.new(-487,-5,95), speed=55},
+    {position=Vector3.new(-492,-5,95), speed=55},
+    {position=Vector3.new(-473,-7,95), speed=29},
+    {position=Vector3.new(-473,-7,11), speed=29},
+}
     else
         fadWaypoints = {
             {position=Vector3.new(-474,-7,23),  speed=55},
@@ -308,7 +309,7 @@ end
 local function stopAutoWalk()
     if autoWalkConnection then autoWalkConnection:Disconnect(); autoWalkConnection=nil end
     autoWalkPhase=1
-    local c=Player.Character if c then local hum=c:FindFirstChildOfClass("Humanoid") if hum then hum:Move(Vector3.zero,false) end end
+    local c=player.Character if c then local hum=c:FindFirstChildOfClass("Humanoid") if hum then hum:Move(Vector3.zero,false) end end
 end
 
 local function startAutoRight()
@@ -337,7 +338,7 @@ end
 local function stopAutoRight()
     if autoRightConnection then autoRightConnection:Disconnect(); autoRightConnection=nil end
     autoRightPhase=1
-    local c=Player.Character if c then local hum=c:FindFirstChildOfClass("Humanoid") if hum then hum:Move(Vector3.zero,false) end end
+    local c=player.Character if c then local hum=c:FindFirstChildOfClass("Humanoid") if hum then hum:Move(Vector3.zero,false) end end
 end
 
 --// NO ANIMATION LOGIC //
