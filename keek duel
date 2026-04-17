@@ -584,7 +584,6 @@ local antiBatToggle, batInd, batBase = createToggle("ANTI BAT")
 local antiFlingToggle, fliInd, fliBase = createToggle("ANTI-FLING")
 local infJumpToggle, jumpInd, jumpBase = createToggle("INFINITE JUMP")
 local noAnimToggle, noAnimInd, noAnimBase = createToggle("NO ANIMATION")
-local noAnimToggle, noAnimInd, noAnimBase = createToggle("NO ANIMATION")
 
 local saveBtn = Instance.new("TextButton")
 saveBtn.Size = UDim2.new(0.9, 0, 0, 32); saveBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0); saveBtn.Text = "SAVE CONFIG"; saveBtn.TextColor3 = Color3.new(1, 1, 1); saveBtn.Font = Enum.Font.LuckiestGuy; saveBtn.TextSize = 14; saveBtn.Parent = container
@@ -672,7 +671,6 @@ end)
 antiBatToggle.MouseButton1Click:Connect(function() antiBatOn = not antiBatOn; updateVisual(antiBatOn, batInd, batBase) end)
 antiFlingToggle.MouseButton1Click:Connect(function() antiFlingOn = not antiFlingOn; updateVisual(antiFlingOn, fliInd, fliBase) end)
 infJumpToggle.MouseButton1Click:Connect(function() infinityJumpEnabled = not infinityJumpEnabled; updateVisual(infinityJumpEnabled, jumpInd, jumpBase) end)
-noAnimToggle.MouseButton1Click:Connect(function() if not noAnimToggled then startNoAnim() else stopNoAnim() end; updateVisual(noAnimToggled, noAnimInd, noAnimBase) end)
 
 local function setVisual(btn, grad, stroke, state, onTxt, offTxt)
     btn.Text = state and onTxt or offTxt; btn.TextColor3 = state and Color3.new(1,1,1) or Color3.fromRGB(200, 180, 255)
