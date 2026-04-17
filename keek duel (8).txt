@@ -677,8 +677,6 @@ titleLabel.TextSize = 22
 titleLabel.Font = Enum.Font.LuckiestGuy
 titleLabel.Parent = sideMenu
 
-
-local layout = Instance.new("UIListLayout", container)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 layout.Padding = UDim.new(0, 12); layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
@@ -695,7 +693,8 @@ container.Parent = sideMenu
 container.ScrollBarThickness = 6
 container.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-local layout = Instance.new("UIListLayout", container)
+local layout = Instance.new("UIListLayout")
+layout.Parent = container
 layout.Padding = UDim.new(0, 10)
 
 local function createToggle(text)
