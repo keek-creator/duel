@@ -35,14 +35,14 @@ local Config = { ForwardSpeed = 58, ReturnSpeed = 28 }
 local rightWaypoints = {
     Vector3.new(-473.04, -6.99, 29.71),
     Vector3.new(-484.98, -4.89, 21.21),
-    Vector3.new(-475.00, -6.99, 26.43),
+    Vector3.new(-474.75, -6.85, 27.56),
     Vector3.new(-474.67, -6.94, 105.48),
 }
 
 local leftWaypoints = {
     Vector3.new(-472.49, -7.00, 90.62),
     Vector3.new(-484.41, -4.89, 99.02),
-    Vector3.new(-475.08, -7.00, 93.29),
+    Vector3.new(-474.52, -6.85, 92.86),
     Vector3.new(-474.22, -6.96, 16.18),
 }
 
@@ -219,7 +219,7 @@ local function startFloat()
             elseif diff < -0.3 then vertVel = math.clamp(diff * 8, -50, -5)
             else vertVel = 0 end
         end
-        local spd = 29
+        local spd = 28
         local horizX = moveDir.Magnitude > 0.1 and moveDir.X * spd or 0
         local horizZ = moveDir.Magnitude > 0.1 and moveDir.Z * spd or 0
         h.AssemblyLinearVelocity = Vector3.new(horizX, vertVel, horizZ)
