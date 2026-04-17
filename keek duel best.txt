@@ -699,14 +699,46 @@ local layout = Instance.new("UIListLayout", container)
 layout.Padding = UDim.new(0, 10)
 
 local function createToggle(text)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1, 0, 0, 30)
-    button.BackgroundColor3 = Color3.fromRGB(40,40,60)
-    button.Text = text
-    button.TextColor3 = Color3.new(1,1,1)
-    button.Parent = container
+    local holder = Instance.new("Frame")
+    holder.Size = UDim2.new(1, 0, 0, 40)
+    holder.BackgroundTransparency = 1
+    holder.Parent = container
 
-    return button, button, button
+    -- label
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.65, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(220,220,220)
+    label.TextSize = 14
+    label.Font = Enum.Font.GothamBold
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = holder
+
+    -- toggle background
+    local toggle = Instance.new("Frame")
+    toggle.Size = UDim2.new(0, 45, 0, 22)
+    toggle.Position = UDim2.new(1, -50, 0.5, -11)
+    toggle.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+    toggle.Parent = holder
+    Instance.new("UICorner", toggle).CornerRadius = UDim.new(1,0)
+
+    -- circle
+    local circle = Instance.new("Frame")
+    circle.Size = UDim2.new(0, 18, 0, 18)
+    circle.Position = UDim2.new(0, 2, 0.5, -9)
+    circle.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    circle.Parent = toggle
+    Instance.new("UICorner", circle).CornerRadius = UDim.new(1,0)
+
+    -- invisible button (click area)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1,0,1,0)
+    button.BackgroundTransparency = 1
+    button.Text = ""
+    button.Parent = holder
+
+    return button, circle, toggle
 end
 
 local fovToggle, fovInd, fovBase = createToggle("FOV (100)")
@@ -782,9 +814,14 @@ btnDirLeft.MouseButton1Click:Connect(function() AutoPlayDirection = "Left"; btnD
 btnDirRight.MouseButton1Click:Connect(function() AutoPlayDirection = "Right"; btnDirRight.BackgroundColor3 = Color3.fromRGB(138, 43, 226); btnDirLeft.BackgroundColor3 = Color3.fromRGB(30, 40, 60); if AutoPlayEnabled then stopAutoLeft(); AutoLeftEnabled = false; AutoRightEnabled = true; startAutoRight() end end)
 
 --// UI CONNECTIONS & PERSISTENCE //
-local function updateVisual(on, ind, base)
-    TweenService:Create(ind, TweenInfo.new(0.25), {Position = on and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play()
-    TweenService:Create(base, TweenInfo.new(0.25), {BackgroundColor3 = on and GALAXY_PURPLE or Color3.fromRGB(40, 40, 60)}):Play()
+local function updateVisual(on, circle, bg)
+    TweenService:Create(circle, TweenInfo.new(0.25), {
+        Position = on and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+    }):Play()
+
+    TweenService:Create(bg, TweenInfo.new(0.25), {
+        BackgroundColor3 = on and Color3.fromRGB(80, 120, 255) or Color3.fromRGB(40, 40, 60)
+    }):Play()
 end
 
 openBtn.MouseButton1Click:Connect(function()
