@@ -32,20 +32,23 @@ local FILE_NAME = "keekduelConfig.json"
 local dropEnabled = false
 local _wfConns = {}
 local Config = { ForwardSpeed = 59, ReturnSpeed = 28 }
-local rightWaypoints = {
-    Vector3.new(-473.04, -6.99, 29.71),
-    Vector3.new(-483.57, -5.10, 18.74),
-    Vector3.new(-475.00, -6.99, 26.43),
-    Vector3.new(-474.67, -6.94, 105.48),
-}
-
-local leftWaypoints = {
-    Vector3.new(-472.49, -7.00, 90.62),
-    Vector3.new(-484.62, -5.10, 100.37),
-    Vector3.new(-475.08, -7.00, 93.29),
-    Vector3.new(-474.22, -6.96, 16.18),
-}
-
+    fadWaypoints = {
+            {position=Vector3.new(-475,-7,96),  speed=59},
+            {position=Vector3.new(-483,-5,95),  speed=59},
+            {position=Vector3.new(-487,-5,95),  speed=55},
+            {position=Vector3.new(-492,-5,95),  speed=55},
+            {position=Vector3.new(-473,-7,95),  speed=29},
+            {position=Vector3.new(-473,-7,11),  speed=29},
+        }
+    else
+        fadWaypoints = {
+            {position=Vector3.new(-474,-7,23),  speed=55},
+            {position=Vector3.new(-484,-5,24),  speed=55},
+            {position=Vector3.new(-488,-5,24),  speed=55},
+            {position=Vector3.new(-493,-5,25),  speed=55},
+            {position=Vector3.new(-473,-7,25),  speed=29},
+            {position=Vector3.new(-474,-7,112), speed=29},
+        }
 -- Auto-Play variables
 local AutoLeftEnabled = false
 local AutoRightEnabled = false
@@ -237,90 +240,104 @@ end
 
 --// AUTO PLAY (4 WAYPOINT SYSTEM) //
 
-local autoRightConn
-local autoLeftConn
 
-local autoRightIndex = 1
-local autoLeftIndex = 1
+local POSITION_1  = Vector3.new(-476.48,-6.28, 92.73)
+local POSITION_2  = Vector3.new(-483.12,-4.95, 94.80)
+local POSITION_R1 = Vector3.new(-476.16,-6.52, 25.62)
+local POSITION_R2 = Vector3.new(-483.04,-5.09, 23.14)
+local autoWalkPhase  = 1
+local autoRightPhase = 1
+local autoWalkConnection, autoRightConnection
 
--- RIGHT SIDE
+local coordESPFolder = Instance.new("Folder",workspace); coordESPFolder.Name="ANTILOSER_CoordESP"
+local function createCoordMarker(pos,lbl,col)
+    local dot = Instance.new("Part",coordESPFolder)
+    dot.Anchored=true; dot.CanCollide=false; dot.CastShadow=false
+    dot.Material=Enum.Material.Neon; dot.Color=col; dot.Shape=Enum.PartType.Ball
+    dot.Size=Vector3.new(1,1,1); dot.Position=pos; dot.Transparency=0.2
+    local bb=Instance.new("BillboardGui",dot); bb.AlwaysOnTop=true; bb.Size=UDim2.new(0,100,0,20)
+    bb.StudsOffset=Vector3.new(0,2,0); bb.MaxDistance=300
+    local tx=Instance.new("TextLabel",bb); tx.Size=UDim2.new(1,0,1,0)
+    tx.BackgroundTransparency=1; tx.Text=lbl; tx.TextColor3=col
+    tx.TextStrokeColor3=Color3.fromRGB(0,0,0); tx.TextStrokeTransparency=0
+    tx.Font=Enum.Font.GothamBold; tx.TextSize=12
+end
+createCoordMarker(POSITION_1,  "L1",    Color3.fromRGB(200,200,200))
+createCoordMarker(POSITION_2,  "L END", Color3.fromRGB(160,160,160))
+createCoordMarker(POSITION_R1, "R1",    Color3.fromRGB(220,220,220))
+createCoordMarker(POSITION_R2, "R END", Color3.fromRGB(180,180,180))
+
+local function faceSouth()
+    local c=Player.Character if not c then return end
+    local h=c:FindFirstChild("HumanoidRootPart") if not h then return end
+    h.CFrame=CFrame.new(h.Position)*CFrame.Angles(0,0,0)
+    local cam=workspace.CurrentCamera
+    if cam then cam.CFrame=CFrame.new(h.Position.X,h.Position.Y+5,h.Position.Z-12)*CFrame.Angles(math.rad(-15),0,0) end
+end
+local function faceNorth()
+    local c=Player.Character if not c then return end
+    local h=c:FindFirstChild("HumanoidRootPart") if not h then return end
+    h.CFrame=CFrame.new(h.Position)*CFrame.Angles(0,math.rad(180),0)
+    local cam=workspace.CurrentCamera
+    if cam then cam.CFrame=CFrame.new(h.Position.X,h.Position.Y+2,h.Position.Z+12)*CFrame.Angles(0,math.rad(180),0) end
+end
+
+local function startAutoWalk()
+    if autoWalkConnection then autoWalkConnection:Disconnect() end
+    autoWalkPhase=1
+    autoWalkConnection = RunService.Heartbeat:Connect(function()
+        if not AutoWalkEnabled then return end
+        local c=Player.Character if not c then return end
+        local h=c:FindFirstChild("HumanoidRootPart"); local hum=c:FindFirstChildOfClass("Humanoid")
+        if not h or not hum then return end
+        local target = autoWalkPhase==1 and POSITION_1 or POSITION_2
+        local dist = (Vector3.new(target.X,h.Position.Y,target.Z)-h.Position).Magnitude
+        if dist < 1 then
+            if autoWalkPhase==1 then autoWalkPhase=2; return end
+            hum:Move(Vector3.zero,false); h.AssemblyLinearVelocity=Vector3.new(0,0,0)
+            AutoWalkEnabled=false; Enabled.AutoWalkEnabled=false
+            if VisualSetters and VisualSetters.AutoWalkEnabled then VisualSetters.AutoWalkEnabled(false,true) end
+            if autoWalkConnection then autoWalkConnection:Disconnect(); autoWalkConnection=nil end
+            if onAutoLeftDone then onAutoLeftDone() end
+            faceSouth(); return
+        end
+        local dir=(target-h.Position); local md=Vector3.new(dir.X,0,dir.Z).Unit
+        hum:Move(md,false); h.AssemblyLinearVelocity=Vector3.new(md.X*Values.BoostSpeed,h.AssemblyLinearVelocity.Y,md.Z*Values.BoostSpeed)
+    end)
+end
+local function stopAutoWalk()
+    if autoWalkConnection then autoWalkConnection:Disconnect(); autoWalkConnection=nil end
+    autoWalkPhase=1
+    local c=Player.Character if c then local hum=c:FindFirstChildOfClass("Humanoid") if hum then hum:Move(Vector3.zero,false) end end
+end
+
 local function startAutoRight()
-    if autoRightConn then autoRightConn:Disconnect() end
-    autoRightIndex = 1
-
-    autoRightConn = RunService.Heartbeat:Connect(function()
+    if autoRightConnection then autoRightConnection:Disconnect() end
+    autoRightPhase=1
+    autoRightConnection = RunService.Heartbeat:Connect(function()
         if not AutoRightEnabled then return end
-
-        local h, hum = getHRP(), getHum()
+        local c=Player.Character if not c then return end
+        local h=c:FindFirstChild("HumanoidRootPart"); local hum=c:FindFirstChildOfClass("Humanoid")
         if not h or not hum then return end
-
-        local target = rightWaypoints[autoRightIndex]
-        local direction = target - h.Position
-
-        if direction.Magnitude < 2 then
-            autoRightIndex += 1
-            if autoRightIndex > #rightWaypoints then
-                autoRightIndex = 1
-            end
-            return
+        local target = autoRightPhase==1 and POSITION_R1 or POSITION_R2
+        local dist = (Vector3.new(target.X,h.Position.Y,target.Z)-h.Position).Magnitude
+        if dist < 1 then
+            if autoRightPhase==1 then autoRightPhase=2; return end
+            hum:Move(Vector3.zero,false); h.AssemblyLinearVelocity=Vector3.new(0,0,0)
+            AutoRightEnabled=false; Enabled.AutoRightEnabled=false
+            if VisualSetters and VisualSetters.AutoRightEnabled then VisualSetters.AutoRightEnabled(false,true) end
+            if autoRightConnection then autoRightConnection:Disconnect(); autoRightConnection=nil end
+            if onAutoRightDone then onAutoRightDone() end
+            faceNorth(); return
         end
-
-        local moveDir = direction.Unit
-        hum:Move(moveDir, false)
-
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
+        local dir=(target-h.Position); local md=Vector3.new(dir.X,0,dir.Z).Unit
+        hum:Move(md,false); h.AssemblyLinearVelocity=Vector3.new(md.X*Values.BoostSpeed,h.AssemblyLinearVelocity.Y,md.Z*Values.BoostSpeed)
     end)
 end
-
 local function stopAutoRight()
-    if autoRightConn then
-        autoRightConn:Disconnect()
-        autoRightConn = nil
-    end
-end
-
--- LEFT SIDE
-local function startAutoLeft()
-    if autoLeftConn then autoLeftConn:Disconnect() end
-    autoLeftIndex = 1
-
-    autoLeftConn = RunService.Heartbeat:Connect(function()
-        if not AutoLeftEnabled then return end
-
-        local h, hum = getHRP(), getHum()
-        if not h or not hum then return end
-
-        local target = leftWaypoints[autoLeftIndex]
-        local direction = target - h.Position
-
-        if direction.Magnitude < 2 then
-            autoLeftIndex += 1
-            if autoLeftIndex > #leftWaypoints then
-                autoLeftIndex = 1
-            end
-            return
-        end
-
-        local moveDir = direction.Unit
-        hum:Move(moveDir, false)
-
-        h.AssemblyLinearVelocity = Vector3.new(
-            moveDir.X * Config.ForwardSpeed,
-            h.AssemblyLinearVelocity.Y,
-            moveDir.Z * Config.ForwardSpeed
-        )
-    end)
-end
-
-local function stopAutoLeft()
-    if autoLeftConn then
-        autoLeftConn:Disconnect()
-        autoLeftConn = nil
-    end
+    if autoRightConnection then autoRightConnection:Disconnect(); autoRightConnection=nil end
+    autoRightPhase=1
+    local c=Player.Character if c then local hum=c:FindFirstChildOfClass("Humanoid") if hum then hum:Move(Vector3.zero,false) end end
 end
 
 --// NO ANIMATION LOGIC //
