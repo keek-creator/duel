@@ -660,7 +660,8 @@ if not success then screenGui.Parent = player:WaitForChild("PlayerGui") end
 local PB_W = math.floor(390*GS)
 local PB_H = math.floor(52*GS)
 
-local progBar = Instance.new("Frame", screenGui)
+local progBar = Instance.new("Frame", sg)
+progBar.Active = true
 progBar.Size=UDim2.new(0,PB_W,0,PB_H); progBar.Position=UDim2.new(0.5,-PB_W/2,0.8,-PB_H/2)
 progBar.BackgroundColor3=Color3.fromRGB(14,14,14); progBar.BorderSizePixel=0
 rc(progBar, CR); st(progBar, 3, C.white, 0)
@@ -711,6 +712,48 @@ rc(pbTrack, 4); st(pbTrack, 1.5, C.border, 0.4)
 ProgressBarFill = Instance.new("Frame", pbTrack)
 ProgressBarFill.Size=UDim2.new(0,0,1,0); ProgressBarFill.BackgroundColor3=C.white
 ProgressBarFill.BorderSizePixel=0; ProgressBarFill.ZIndex=3; rc(ProgressBarFill, 4)
+
+local glow = Instance.new("UIStroke")
+glow.Color = Color3.fromRGB(255,255,255)
+glow.Thickness = 1.5
+glow.Transparency = 0.5
+glow.Parent = ProgressBarFill
+
+-- DRAG SYSTEM
+local dragging = false
+local dragInput, dragStart, startPos
+
+progBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = progBar.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+progBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        progBar.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
 
 -- // DARK THEME OVERRIDE //
 local GALAXY_BLACK  = Color3.fromRGB(0, 0, 0)
