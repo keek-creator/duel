@@ -684,18 +684,6 @@ local padding = Instance.new("UIPadding", container)
 padding.PaddingTop = UDim.new(0, 5)
 padding.PaddingBottom = UDim.new(0, 5)
 
-local container = Instance.new("ScrollingFrame")
-container.Size = UDim2.new(0.9, 0, 0.82, 0)
-container.Position = UDim2.new(0.05, 0, 0.14, 0)
-container.BackgroundTransparency = 1
-container.Parent = sideMenu
-
-container.ScrollBarThickness = 6
-container.AutomaticCanvasSize = Enum.AutomaticSize.Y
-
-local layout = Instance.new("UIListLayout")
-layout.Parent = container
-layout.Padding = UDim.new(0, 10)
 
 local function createToggle(text)
     local button = Instance.new("Frame")
@@ -724,7 +712,25 @@ local function createToggle(text)
     toggleBg.Position = UDim2.new(1, -45, 0.5, -9)
     toggleBg.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
     toggleBg.Parent = button
-    Instance.new("UICorner", toggleBg).CornerRadius = UDim.new(1, 0)
+    Instance.new("UI-- CONTAINER (CLEAN)
+local container = Instance.new("ScrollingFrame")
+container.Size = UDim2.new(0.9, 0, 0.82, 0)
+container.Position = UDim2.new(0.05, 0, 0.14, 0)
+container.BackgroundTransparency = 1
+container.Parent = sideMenu
+container.ScrollBarThickness = 6
+container.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+-- LAYOUT (SAFE)
+local layout = Instance.new("UIListLayout")
+layout.Parent = container
+layout.Padding = UDim.new(0, 10)
+
+-- PADDING (SAFE)
+local padding = Instance.new("UIPadding")
+padding.Parent = container
+padding.PaddingTop = UDim.new(0, 5)
+padding.PaddingBottom = UDim.new(0, 5)Corner", toggleBg).CornerRadius = UDim.new(1, 0)
 
     local toggleCircle = Instance.new("Frame")
     toggleCircle.Size = UDim2.new(0, 16, 0, 16)
