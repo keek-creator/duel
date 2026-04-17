@@ -28,6 +28,8 @@ local player = Players.LocalPlayer
 local LocalPlayer = player
 local FILE_NAME = "keekduelConfig.json"
 
+local Connections = {}
+
 -- Galaxy Mover Variables
 local dropEnabled = false
 local _wfConns = {}
@@ -685,6 +687,42 @@ btnDrop.MouseButton1Click:Connect(function() if not checkDrop() then return end;
 btnLock.MouseButton1Click:Connect(function() if not checkLock() then return end; SETTINGS.LOCK_ENABLED = not SETTINGS.LOCK_ENABLED; setVisual(btnLock, gradLock, strokeLock, SETTINGS.LOCK_ENABLED, "LOCK: ON", "LOCK: OFF"); if SETTINGS.LOCK_ENABLED then equipAnyTool(); startAutoSwing() end end)
 btnTP.MouseButton1Click:Connect(function() if not checkTP() then return end; tpDownActive = true; setVisual(btnTP, gradTP, strokeTP, true, "TP DOWN: ON", "TP DOWN: OFF"); task.spawn(doTPDown); task.delay(0.2, function() tpDownActive = false; setVisual(btnTP, gradTP, strokeTP, false, "TP DOWN: ON", "TP DOWN: OFF") end) end)
 
+-- [[ ANTI RAGDOLL ]] --
+local function startAntiRagdoll()
+    if Connections.antiRagdoll then return end
+    Connections.antiRagdoll = RunService.Heartbeat:Connect(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            local humState = hum:GetState()
+            if humState == Enum.HumanoidStateType.Physics or
+               humState == Enum.HumanoidStateType.Ragdoll or
+               humState == Enum.HumanoidStateType.FallingDown then
+                hum:ChangeState(Enum.HumanoidStateType.Running)
+                workspace.CurrentCamera.CameraSubject = hum
+                pcall(function()
+                    if LocalPlayer.Character then
+                        local PlayerModule = LocalPlayer.PlayerScripts:FindFirstChild("PlayerModule")
+                        if PlayerModule then
+                            local Controls = require(PlayerModule:FindFirstChild("ControlModule"))
+                            Controls:Enable()
+                        end
+                    end
+                end)
+                if root then
+                    root.Velocity = Vector3.new(0, 0, 0)
+                    root.RotVelocity = Vector3.new(0, 0, 0)
+                end
+            end
+        end
+        for _, obj in ipairs(char:GetDescendants()) do
+            if obj:IsA("Motor6D") and obj.Enabled == false then obj.Enabled = true end
+        end
+    end)
+end
+
 --// LOOPS & CONNECTIONS //
 LocalPlayer.CharacterAdded:Connect(function() if noAnimToggled then task.wait(0.5); startNoAnim() end end)
 
@@ -751,6 +789,7 @@ end
 --// AUTO-EXECUTION //
 applyAntiLagSettings(true)
 destroyAllAccessories()
+startAntiRagdoll()
 task.spawn(function()
     task.wait(2); local plots = workspace:WaitForChild("Plots", 10); if plots then for _, plot in ipairs(plots:GetChildren()) do if plot:IsA("Model") then scanPlot(plot) end end; plots.ChildAdded:Connect(function(plot) if plot:IsA("Model") then task.wait(0.5); scanPlot(plot) end end) end
 end)
