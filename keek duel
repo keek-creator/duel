@@ -614,6 +614,16 @@ local frameFloat, btnFloat, strokeFloat, gradFloat, checkFloat = createFloatingB
 local frameTP, btnTP, strokeTP, gradTP, checkTP = createFloatingBar("TPBar", "TP DOWN", UDim2.new(0.6, 0, 0.45, 0))
 local frameLock, btnLock, strokeLock, gradLock, checkLock = createFloatingBar("LockBar", "LOCK: OFF", UDim2.new(0.3, 0, 0.60, 0))
 
+frameAuto.ZIndex = 1
+frameGrab.ZIndex = 1
+frameDrop.ZIndex = 1
+frameFloat.ZIndex = 1
+frameTP.ZIndex = 1
+frameLock.ZIndex = 1
+
+sideMenu.ZIndex = 10
+openBtn.ZIndex = 10
+
 local function addGear(parentFrame)
     local g = Instance.new("TextButton")
     g.Size = UDim2.new(0, 25, 0, 25); g.Position = UDim2.new(1, -30, 0.5, -12.5); g.BackgroundColor3 = Color3.fromRGB(40, 20, 70); g.Text = "⚙️"; g.TextColor3 = Color3.fromRGB(255, 255, 255); g.Font = Enum.Font.GothamBold; g.TextSize = 14; g.Parent = parentFrame
