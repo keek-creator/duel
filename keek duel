@@ -686,29 +686,27 @@ local padding = Instance.new("UIPadding", container)
 padding.PaddingTop = UDim.new(0, 5)
 padding.PaddingBottom = UDim.new(0, 5)
 
-local function createToggle(text)
-    local frame = Instance.new("TextButton")
-    frame.Size = UDim2.new(1, 0, 0, 34); frame.BackgroundTransparency = 1; frame.Text = ""; frame.Parent = container
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.6, 0, 1, 0); label.BackgroundTransparency = 1; label.Text = text; label.TextColor3 = Color3.new(1, 1, 1); label.TextXAlignment = Enum.TextXAlignment.Left; label.Font = Enum.Font.LuckiestGuy; label.TextSize = 13; label.Parent = frame
-    local switchBase = Instance.local container = Instance.new("ScrollingFrame")
+local container = Instance.new("ScrollingFrame")
 container.Size = UDim2.new(0.9, 0, 0.82, 0)
 container.Position = UDim2.new(0.05, 0, 0.14, 0)
 container.BackgroundTransparency = 1
 container.Parent = sideMenu
 
 container.ScrollBarThickness = 6
-container.CanvasSize = UDim2.new(0, 0, 0, 0)
 container.AutomaticCanvasSize = Enum.AutomaticSize.Y
-container.ScrollingDirection = Enum.ScrollingDirection.Y
-container.ClipsDescendants = true
-new("Frame")
-    switchBase.Size = UDim2.new(0, 42, 0, 22); switchBase.Position = UDim2.new(1, -42, 0.5, -11); switchBase.BackgroundColor3 = Color3.fromRGB(40, 40, 60); switchBase.Parent = frame
-    Instance.new("UICorner", switchBase).CornerRadius = UDim.new(1, 0)
-    local indicator = Instance.new("Frame")
-    indicator.Size = UDim2.new(0, 18, 0, 18); indicator.Position = UDim2.new(0, 2, 0.5, -9); indicator.BackgroundColor3 = Color3.new(1, 1, 1); indicator.Parent = switchBase
-    Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
-    return frame, indicator, switchBase
+
+local layout = Instance.new("UIListLayout", container)
+layout.Padding = UDim.new(0, 10)
+
+local function createToggle(text)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 0, 30)
+    button.BackgroundColor3 = Color3.fromRGB(40,40,60)
+    button.Text = text
+    button.TextColor3 = Color3.new(1,1,1)
+    button.Parent = container
+
+    return button, button, button
 end
 
 local fovToggle, fovInd, fovBase = createToggle("FOV (100)")
