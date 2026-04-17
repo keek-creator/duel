@@ -863,22 +863,86 @@ UserInputService.JumpRequest:Connect(function() if infinityJumpEnabled and playe
 
 saveBtn.MouseButton1Click:Connect(function()
     if writefile then
-        local data = { FOV = fovOn, Galaxy = galaxyOn, AntiBat = antiBatOn, AntiFling = antiFlingOn, InfJump = infinityJumpEnabled, NoAnim = noAnimToggled, BtnX = openBtn.Position.X.Scale, BtnOffsetX = openBtn.Position.X.Offset, BtnY = openBtn.Position.Y.Scale, BtnOffsetY = openBtn.Position.Y.Offset }
-        writefile(FILE_NAME, HttpService:JSONEncode(data)); saveBtn.Text = "SAVED!"; task.wait(0.5); saveBtn.Text = "SAVE CONFIG"
+        local data = {
+            -- toggles
+            FOV = fovOn,
+            Galaxy = galaxyOn,
+            AntiBat = antiBatOn,
+            AntiFling = antiFlingOn,
+            InfJump = infinityJumpEnabled,
+            NoAnim = noAnimToggled,
+
+            -- open button
+            OpenBtn = {
+                X = openBtn.Position.X.Scale,
+                Xo = openBtn.Position.X.Offset,
+                Y = openBtn.Position.Y.Scale,
+                Yo = openBtn.Position.Y.Offset
+            },
+
+            -- floating buttons
+            Floating = {
+                Auto = {frameAuto.Position.X.Scale, frameAuto.Position.X.Offset, frameAuto.Position.Y.Scale, frameAuto.Position.Y.Offset},
+                Grab = {frameGrab.Position.X.Scale, frameGrab.Position.X.Offset, frameGrab.Position.Y.Scale, frameGrab.Position.Y.Offset},
+                Drop = {frameDrop.Position.X.Scale, frameDrop.Position.X.Offset, frameDrop.Position.Y.Scale, frameDrop.Position.Y.Offset},
+                Float = {frameFloat.Position.X.Scale, frameFloat.Position.X.Offset, frameFloat.Position.Y.Scale, frameFloat.Position.Y.Offset},
+                TP = {frameTP.Position.X.Scale, frameTP.Position.X.Offset, frameTP.Position.Y.Scale, frameTP.Position.Y.Offset},
+                Lock = {frameLock.Position.X.Scale, frameLock.Position.X.Offset, frameLock.Position.Y.Scale, frameLock.Position.Y.Offset},
+            }
+        }
+
+        writefile(FILE_NAME, HttpService:JSONEncode(data))
+        saveBtn.Text = "SAVED!"
+        task.wait(0.5)
+        saveBtn.Text = "SAVE CONFIG"
     end
 end)
 
 if isfile and isfile(FILE_NAME) then
-    local s, d = pcall(function() return HttpService:JSONDecode(readfile(FILE_NAME)) end)
+    local s, d = pcall(function()
+        return HttpService:JSONDecode(readfile(FILE_NAME))
+    end)
+
     if s and d then
-        if d.BtnX then openBtn.Position = UDim2.new(d.BtnX, d.BtnOffsetX, d.BtnY, d.BtnOffsetY) end
-        fovOn, galaxyOn, antiBatOn, antiFlingOn, infinityJumpEnabled, noAnimToggled = d.FOV or false, d.Galaxy or false, d.AntiBat or false, d.AntiFling or false, d.InfJump or false, d.NoAnim or false
-        camera.FieldOfView = fovOn and 100 or 70
-        if galaxyOn then 
-            local sky = Lighting:FindFirstChild("GalaxySky") or Instance.new("Sky"); sky.Name = "GalaxySky"; sky.SkyboxBk, sky.SkyboxDn, sky.SkyboxFt, sky.SkyboxLf, sky.SkyboxRt, sky.SkyboxUp = "rbxassetid://159454299", "rbxassetid://159454296", "rbxassetid://159454293", "rbxassetid://159454286", "rbxassetid://159454289", "rbxassetid://159454291"; sky.Parent = Lighting; Lighting.Brightness, Lighting.ClockTime, Lighting.ExposureCompensation = 0, 0, -2; Lighting.OutdoorAmbient = Color3.fromRGB(0, 0, 0)
+        -- open button
+        if d.OpenBtn then
+            openBtn.Position = UDim2.new(d.OpenBtn.X, d.OpenBtn.Xo, d.OpenBtn.Y, d.OpenBtn.Yo)
         end
+
+        -- floating buttons
+        if d.Floating then
+            local function setPos(frame, t)
+                if t then
+                    frame.Position = UDim2.new(t[1], t[2], t[3], t[4])
+                end
+            end
+
+            setPos(frameAuto, d.Floating.Auto)
+            setPos(frameGrab, d.Floating.Grab)
+            setPos(frameDrop, d.Floating.Drop)
+            setPos(frameFloat, d.Floating.Float)
+            setPos(frameTP, d.Floating.TP)
+            setPos(frameLock, d.Floating.Lock)
+        end
+
+        -- toggles
+        fovOn = d.FOV or false
+        galaxyOn = d.Galaxy or false
+        antiBatOn = d.AntiBat or false
+        antiFlingOn = d.AntiFling or false
+        infinityJumpEnabled = d.InfJump or false
+        noAnimToggled = d.NoAnim or false
+
+        camera.FieldOfView = fovOn and 100 or 70
+
         if noAnimToggled then startNoAnim() end
-        updateVisual(fovOn, fovInd, fovBase); updateVisual(galaxyOn, galInd, galBase); updateVisual(antiBatOn, batInd, batBase); updateVisual(antiFlingOn, fliInd, fliBase); updateVisual(infinityJumpEnabled, jumpInd, jumpBase); updateVisual(noAnimToggled, noAnimInd, noAnimBase)
+
+        updateVisual(fovOn, fovInd, fovBase)
+        updateVisual(galaxyOn, galInd, galBase)
+        updateVisual(antiBatOn, batInd, batBase)
+        updateVisual(antiFlingOn, fliInd, fliBase)
+        updateVisual(infinityJumpEnabled, jumpInd, jumpBase)
+        updateVisual(noAnimToggled, noAnimInd, noAnimBase)
     end
 end
 
