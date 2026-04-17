@@ -12,21 +12,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local player = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
--- // [2] ANTI-LAG CONFIGURATION //
-local CONFIG = {
-	AntiLag = {
-		GlobalShadows = false,
-		FogEnd = 9000000000,
-		Brightness = 1,
-		EnvironmentDiffuseScale = 0,
-		EnvironmentSpecularScale = 0,
-	},
-}
 
---// VARIABLES & STATE //
-local player = Players.LocalPlayer
-local LocalPlayer = player
-local FILE_NAME = "keekduelConfig.json"
+-- FIXED MISSING VARIABLES
+local AutoWalkEnabled = false
+local Enabled = {}
+local Values = { BoostSpeed = 50 }
+
+-- FIXED MISSING FUNCTIONS
+local function startAutoLeft() end
+local function stopAutoLeft() end
 
 -- Galaxy Mover Variables
 local dropEnabled = false
@@ -339,6 +333,70 @@ local function stopAutoRight()
     if autoRightConnection then autoRightConnection:Disconnect(); autoRightConnection=nil end
     autoRightPhase=1
     local c=player.Character if c then local hum=c:FindFirstChildOfClass("Humanoid") if hum then hum:Move(Vector3.zero,false) end end
+end
+
+local function startAutoLeft()
+    if autoWalkConnection then autoWalkConnection:Disconnect() end
+    autoWalkPhase = 1
+
+    autoWalkConnection = RunService.Heartbeat:Connect(function()
+        if not AutoLeftEnabled then return end
+
+        local c = player.Character
+        if not c then return end
+
+        local h = c:FindFirstChild("HumanoidRootPart")
+        local hum = c:FindFirstChildOfClass("Humanoid")
+        if not h or not hum then return end
+
+        local target = autoWalkPhase == 1 and POSITION_1 or POSITION_2
+        local dist = (Vector3.new(target.X, h.Position.Y, target.Z) - h.Position).Magnitude
+
+        if dist < 1 then
+            if autoWalkPhase == 1 then
+                autoWalkPhase = 2
+                return
+            end
+
+            hum:Move(Vector3.zero, false)
+            h.AssemblyLinearVelocity = Vector3.new(0,0,0)
+            AutoLeftEnabled = false
+
+            if autoWalkConnection then
+                autoWalkConnection:Disconnect()
+                autoWalkConnection = nil
+            end
+
+            return
+        end
+
+        local dir = (target - h.Position)
+        local md = Vector3.new(dir.X, 0, dir.Z).Unit
+
+        hum:Move(md, false)
+        h.AssemblyLinearVelocity = Vector3.new(
+            md.X * Values.BoostSpeed,
+            h.AssemblyLinearVelocity.Y,
+            md.Z * Values.BoostSpeed
+        )
+    end)
+end
+
+local function stopAutoLeft()
+    if autoWalkConnection then
+        autoWalkConnection:Disconnect()
+        autoWalkConnection = nil
+    end
+
+    autoWalkPhase = 1
+
+    local c = player.Character
+    if c then
+        local hum = c:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum:Move(Vector3.zero, false)
+        end
+    end
 end
 
 --// NO ANIMATION LOGIC //
