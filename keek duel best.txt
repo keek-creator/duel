@@ -582,52 +582,6 @@ local function execSteal(prompt)
     return true
 end
 
-
-
---// SILENT SWING & LOCK //
-local function equipAnyTool()
-    local char = player.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not hum or char:FindFirstChildWhichIsA("Tool") then return end
-    local bp = player:FindFirstChild("Backpack")
-    local bat = bp and bp:FindFirstChild("Bat")
-    if bat then hum:EquipTool(bat) end
-end
-
-local function silentSwing()
-    local char = player.Character
-    local tool = char and char:FindFirstChildWhichIsA("Tool")
-    if not tool then return end
-    local handle = tool:FindFirstChild("Handle")
-    if not handle or not char:FindFirstChild("HumanoidRootPart") then return end
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= player and p.Character then
-            local eh = p.Character:FindFirstChild("HumanoidRootPart")
-            local hum = p.Character:FindFirstChildOfClass("Humanoid")
-            if eh and hum and hum.Health > 0 and (eh.Position - char.HumanoidRootPart.Position).Magnitude <= 10 then
-                for _, part in ipairs(p.Character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        pcall(function() firetouchinterest(handle, part, 0); firetouchinterest(handle, part, 1) end)
-                    end
-                end
-                break
-            end
-        end
-    end
-end
-
-local autoSwingActive = false
-local function startAutoSwing()
-    if autoSwingActive then return end
-    autoSwingActive = true
-    task.spawn(function()
-        while autoSwingActive and SETTINGS.LOCK_ENABLED do
-            equipAnyTool(); silentSwing(); task.wait(math.random(30, 50) / 100)
-        end
-        autoSwingActive = false
-    end)
-end
-
 --// keek duel UI SETUP //
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "keek duel"
@@ -744,7 +698,6 @@ end
 local fovToggle, fovInd, fovBase = createToggle("FOV (100)")
 local galaxyToggle, galInd, galBase = createToggle("GALAXY MODE")
 local antiBatToggle, batInd, batBase = createToggle("ANTI BAT")
-local antiFlingToggle, fliInd, fliBase = createToggle("ANTI-FLING")
 local infJumpToggle, jumpInd, jumpBase = createToggle("INFINITE JUMP")
 local noAnimToggle, noAnimInd, noAnimBase = createToggle("NO ANIMATION")
 local antiRagdollToggle, ragInd, ragBase = createToggle("ANTI RAGDOLL")
@@ -873,7 +826,11 @@ btnAuto.MouseButton1Click:Connect(function() if not checkAuto() then return end;
 btnGrab.MouseButton1Click:Connect(function() if not checkGrab() then return end; instaGrabEnabled = not instaGrabEnabled; setVisual(btnGrab, gradGrab, strokeGrab, instaGrabEnabled, "AUTO GRAB: ON", "AUTO GRAB: OFF") end)
 btnFloat.MouseButton1Click:Connect(function() if not checkFloat() then return end; isFloating = not isFloating; setVisual(btnFloat, gradFloat, strokeFloat, isFloating, "FLOAT: ON", "FLOAT: OFF"); if isFloating then startFloat() else stopFloat() end end)
 btnDrop.MouseButton1Click:Connect(function() if not checkDrop() then return end; toggleDrop(not dropEnabled); setVisual(btnDrop, gradDrop, strokeDrop, dropEnabled, "DROP: ON", "DROP: OFF") end)
-btnLock.MouseButton1Click:Connect(function() if not checkLock() then return end; SETTINGS.LOCK_ENABLED = not SETTINGS.LOCK_ENABLED; setVisual(btnLock, gradLock, strokeLock, SETTINGS.LOCK_ENABLED, "LOCK: ON", "LOCK: OFF"); if SETTINGS.LOCK_ENABLED then equipAnyTool(); startAutoSwing() end end)
+btnLock.MouseButton1Click:Connect(function()
+    if not checkLock() then return end
+    SETTINGS.LOCK_ENABLED = not SETTINGS.LOCK_ENABLED
+    setVisual(btnLock, gradLock, strokeLock, SETTINGS.LOCK_ENABLED, "LOCK: ON", "LOCK: OFF")
+end)
 btnTP.MouseButton1Click:Connect(function() if not checkTP() then return end; tpDownActive = true; setVisual(btnTP, gradTP, strokeTP, true, "TP DOWN: ON", "TP DOWN: OFF"); task.spawn(doTPDown); task.delay(0.2, function() tpDownActive = false; setVisual(btnTP, gradTP, strokeTP, false, "TP DOWN: ON", "TP DOWN: OFF") end) end)
 
 --// LOOPS & CONNECTIONS //
@@ -925,7 +882,6 @@ saveBtn.MouseButton1Click:Connect(function()
             FOV = fovOn,
             Galaxy = galaxyOn,
             AntiBat = antiBatOn,
-            AntiFling = antiFlingOn,
             InfJump = infinityJumpEnabled,
             NoAnim = noAnimToggled,
 
@@ -983,24 +939,21 @@ if isfile and isfile(FILE_NAME) then
         end
 
         -- toggles
-        fovOn = d.FOV or false
-        galaxyOn = d.Galaxy or false
-        antiBatOn = d.AntiBat or false
-        antiFlingOn = d.AntiFling or false
-        infinityJumpEnabled = d.InfJump or false
-        noAnimToggled = d.NoAnim or false
+fovOn = d.FOV or false
+galaxyOn = d.Galaxy or false
+antiBatOn = d.AntiBat or false
+infinityJumpEnabled = d.InfJump or false
+noAnimToggled = d.NoAnim or false
 
         camera.FieldOfView = fovOn and 100 or 70
 
         if noAnimToggled then startNoAnim() end
 
-        updateVisual(fovOn, fovInd, fovBase)
-        updateVisual(galaxyOn, galInd, galBase)
-        updateVisual(antiBatOn, batInd, batBase)
-        updateVisual(antiFlingOn, fliInd, fliBase)
-        updateVisual(infinityJumpEnabled, jumpInd, jumpBase)
-        updateVisual(noAnimToggled, noAnimInd, noAnimBase)
-    end
+updateVisual(fovOn, fovInd, fovBase)
+updateVisual(galaxyOn, galInd, galBase)
+updateVisual(antiBatOn, batInd, batBase)
+updateVisual(infinityJumpEnabled, jumpInd, jumpBase)
+updateVisual(noAnimToggled, noAnimInd, noAnimBase)
 end
 
 --// AUTO-EXECUTION //
