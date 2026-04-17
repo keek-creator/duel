@@ -727,7 +727,6 @@ antiBatToggle.MouseButton1Click:Connect(function() antiBatOn = not antiBatOn; up
 antiFlingToggle.MouseButton1Click:Connect(function() antiFlingOn = not antiFlingOn; updateVisual(antiFlingOn, fliInd, fliBase) end)
 infJumpToggle.MouseButton1Click:Connect(function() infinityJumpEnabled = not infinityJumpEnabled; updateVisual(infinityJumpEnabled, jumpInd, jumpBase) end)
 noAnimToggle.MouseButton1Click:Connect(function() if not noAnimToggled then startNoAnim() else stopNoAnim() end; updateVisual(noAnimToggled, noAnimInd, noAnimBase) end)
-local antiRagdollToggle, antiRagdollInd, antiRagdollBase = createToggle("ANTI RAGDOLL")
 
 local function setVisual(btn, grad, stroke, state, onTxt, offTxt)
     btn.Text = state and onTxt or offTxt; btn.TextColor3 = state and Color3.new(1,1,1) or Color3.fromRGB(200, 180, 255)
