@@ -711,6 +711,16 @@ local saveBtn = Instance.new("TextButton")
 saveBtn.Size = UDim2.new(0.9, 0, 0, 32); saveBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0); saveBtn.Text = "SAVE CONFIG"; saveBtn.TextColor3 = Color3.new(1, 1, 1); saveBtn.Font = Enum.Font.LuckiestGuy; saveBtn.TextSize = 14; saveBtn.Parent = container
 Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 6)
 
+local resetBtn = Instance.new("TextButton")
+resetBtn.Size = UDim2.new(0.9, 0, 0, 32)
+resetBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+resetBtn.Text = "RESET CONFIG"
+resetBtn.TextColor3 = Color3.new(1,1,1)
+resetBtn.Font = Enum.Font.LuckiestGuy
+resetBtn.TextSize = 14
+resetBtn.Parent = container
+Instance.new("UICorner", resetBtn).CornerRadius = UDim.new(0,6)
+
 --// FLOATING BARS UI (Galaxy Mover) //
 local function createFloatingBar(name, defaultText, startPos)
     local frame = Instance.new("Frame")
