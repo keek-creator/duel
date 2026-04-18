@@ -806,20 +806,28 @@ local function createFloatingBar(name, defaultText, startPos)
     local dragging, dragInput, dragStart, startPosFrame, hasDragged = false
 
     btn.InputBegan:Connect(function(input)
-        if UI_LOCKED then return end
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            hasDragged = false
-            dragStart = input.Position
-            startPosFrame = frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 
+    or input.UserInputType == Enum.UserInputType.Touch then
+        
+        hasDragged = false
+        dragStart = input.Position
+        startPosFrame = frame.Position
 
+        -- ONLY allow dragging if NOT locked
+        if not UI_LOCKED then
+            dragging = true
+        else
+            dragging = false
+        end
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+	
     btn.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
@@ -831,17 +839,7 @@ local function createFloatingBar(name, defaultText, startPos)
         end
     end)
 
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging and not UI_LOCKED then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(
-                startPosFrame.X.Scale,
-                startPosFrame.X.Offset + delta.X,
-                startPosFrame.Y.Scale,
-                startPosFrame.Y.Offset + delta.Y
-            )
-        end
-    end)
+    
 
     local function isRealClick()
         return not hasDragged
@@ -863,7 +861,18 @@ local frameUILock, btnUILock, strokeUILock, gradUILock, checkUILock =
 
 local function addGear(parentFrame)
     local g = Instance.new("TextButton")
-    g.Size = UDim2.new(0, 25, 0, 25); g.Position = UDim2.new(1, -30, 0.5, -12.5); g.BackgroundColor3 = Color3.fromRGB(40, 20, 70); g.Text = "⚙️"; g.TextColor3 = Color3.fromRGB(255, 255, 255); g.Font = Enum.Font.GothamBold; g.TextSize = 14; g.Parent = parentFrame
+    g.Size = UDim2.new(0, 25, 0, 25); g.Position = UDim2.new(1, -30, 0.5, -12.5); g.BackgroundColor3 = Color3.fromRGB(40, 20, 70); g.Text = "⚙️"; g.TextColor3 = Color3.fromRGB(255, 255, 255); g.Font = Enum.Font.GothamBold; g.TextSize = 14; g.PUserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging and not UI_LOCKED then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPosFrame.X.Scale,
+            startPosFrame.X.Offset + delta.X,
+            startPosFrame.Y.Scale,
+            startPosFrame.Y.Offset + delta.Y
+        )
+    end
+end)
+	parent = parentFrame
     Instance.new("UICorner", g).CornerRadius = UDim.new(0, 6)
     return g
 end
