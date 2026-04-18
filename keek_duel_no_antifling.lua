@@ -160,15 +160,15 @@ Config = {
 }
 local rightWaypoints = {
     Vector3.new(-473.04, -6.99, 29.71),
-    Vector3.new(-483.26, -4.89, 21.98),
-    Vector3.new(-473.68, -6.85, 28.61),
+    Vector3.new(-486.04, -4.64, 19.04),
+    Vector3.new(-474.18, -6.85, 28.20),
     Vector3.new(-474.67, -6.94, 105.48),
 }
 
 local leftWaypoints = {
     Vector3.new(-472.49, -7.00, 90.62),
-    Vector3.new(-482.91, -4.89, 99.31),
-    Vector3.new(-474.41, -6.85, 92.38),
+    Vector3.new(-485.59, -4.74, 100.73),
+    Vector3.new(-474.49, -6.85, 92.60),
     Vector3.new(-474.22, -6.96, 16.18),
 }
 
