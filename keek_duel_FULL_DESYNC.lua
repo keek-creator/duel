@@ -25,7 +25,7 @@ local CONFIG = {
 
 
 --// DESYNC SYSTEM //
-local desyncEnabled = false
+local desyncEnabled = true
 local desyncConnection
 
 local function getHumanoidDesync()
