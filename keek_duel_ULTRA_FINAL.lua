@@ -1,3 +1,158 @@
+
+--// ===== FIXED CUSTOM AUTO PLAY (FINAL WORKING) ===== //
+
+local LeftPoints = {L1=nil,L2=nil,L3=nil,L4=nil}
+local RightPoints = {R1=nil,R2=nil,R3=nil,R4=nil}
+
+local leftOrder = {"L1","L2","L3","L4"}
+local rightOrder = {"R1","R2","R3","R4"}
+
+local currentPointIndex = 1
+local customAutoConn
+local CustomAutoEnabled = false
+
+-- SAFE GETTERS
+local function getHRP()
+    local char = game.Players.LocalPlayer.Character
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+local function getHum()
+    local char = game.Players.LocalPlayer.Character
+    return char and char:FindFirstChildOfClass("Humanoid")
+end
+
+-- SAVE
+local function saveLeft(name)
+    local hrp = getHRP()
+    if hrp then
+        LeftPoints[name] = hrp.Position
+    end
+end
+
+local function saveRight(name)
+    local hrp = getHRP()
+    if hrp then
+        RightPoints[name] = hrp.Position
+    end
+end
+
+-- STOP
+local function stopCustomAuto()
+    CustomAutoEnabled = false
+
+    if customAutoConn then
+        customAutoConn:Disconnect()
+        customAutoConn = nil
+    end
+
+    local hum = getHum()
+    if hum then
+        hum:Move(Vector3.new(0,0,0), false)
+    end
+end
+
+-- START (FIXED)
+local function startCustomAuto()
+    stopCustomAuto()
+    CustomAutoEnabled = true
+    currentPointIndex = 1
+
+    customAutoConn = game:GetService("RunService").Heartbeat:Connect(function()
+        if not CustomAutoEnabled then return end
+
+        local hrp, hum = getHRP(), getHum()
+        if not hrp or not hum then return end
+
+        local target
+        if _G.AutoPlayDirection == "Right" then
+            target = RightPoints[rightOrder[currentPointIndex]]
+        else
+            target = LeftPoints[leftOrder[currentPointIndex]]
+        end
+
+        if not target then return end
+
+        hum:MoveTo(target)
+
+        if (hrp.Position - target).Magnitude < 3 then
+            currentPointIndex += 1
+            local max = (_G.AutoPlayDirection == "Right") and #rightOrder or #leftOrder
+            if currentPointIndex > max then
+                currentPointIndex = 1
+            end
+        end
+    end)
+end
+
+-- SIMPLE GUI BUTTONS (MAIN)
+task.spawn(function()
+    task.wait(2)
+    local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+    local screen = Instance.new("ScreenGui", playerGui)
+    screen.Name = "AutoPathUI"
+
+    local frame = Instance.new("Frame", screen)
+    frame.Size = UDim2.new(0,200,0,300)
+    frame.Position = UDim2.new(0,20,0,100)
+    frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+
+    local function makeBtn(name, y, isRight)
+        local b = Instance.new("TextButton", frame)
+        b.Size = UDim2.new(1,0,0,25)
+        b.Position = UDim2.new(0,0,0,y)
+        b.Text = name.." (SET)"
+        b.BackgroundColor3 = Color3.fromRGB(40,40,40)
+        b.TextColor3 = Color3.new(1,1,1)
+
+        b.MouseButton1Click:Connect(function()
+            if isRight then
+                saveRight(name)
+            else
+                saveLeft(name)
+            end
+            b.Text = name.." ✔"
+            b.BackgroundColor3 = Color3.fromRGB(0,170,100)
+        end)
+    end
+
+    -- LEFT
+    makeBtn("L1",0,false)
+    makeBtn("L2",30,false)
+    makeBtn("L3",60,false)
+    makeBtn("L4",90,false)
+
+    -- RIGHT
+    makeBtn("R1",130,true)
+    makeBtn("R2",160,true)
+    makeBtn("R3",190,true)
+    makeBtn("R4",220,true)
+
+    -- AUTO BUTTON
+    local autoBtn = Instance.new("TextButton", frame)
+    autoBtn.Size = UDim2.new(1,0,0,30)
+    autoBtn.Position = UDim2.new(0,0,0,260)
+    autoBtn.Text = "AUTO: OFF"
+    autoBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+
+    autoBtn.MouseButton1Click:Connect(function()
+        CustomAutoEnabled = not CustomAutoEnabled
+
+        if CustomAutoEnabled then
+            autoBtn.Text = "AUTO: ON"
+            startCustomAuto()
+        else
+            autoBtn.Text = "AUTO: OFF"
+            stopCustomAuto()
+        end
+    end)
+end)
+
+
+
+--// ===== MERGED CUSTOM AUTO SYSTEM ===== //
+
 repeat task.wait() until game:IsLoaded()
 
 --// SERVICES //
@@ -1119,55 +1274,82 @@ loadstring(game:HttpGet("https://pastefy.app/VEPBzfX7/raw"))()
 
 
 
---// ===== IMPROVED AUTO PATH GUI + SAVE/LOAD/RESET ===== //
 
-local HttpService = game:GetService("HttpService")
-local PATH_FILE = "keek_paths.json"
+--// ===== FINAL AUTO PATH GUI + CUSTOM AUTO PLAY ===== //
 
 local LeftPoints = {L1=nil,L2=nil,L3=nil,L4=nil}
 local RightPoints = {R1=nil,R2=nil,R3=nil,R4=nil}
 
+local leftOrder = {"L1","L2","L3","L4"}
+local rightOrder = {"R1","R2","R3","R4"}
+
+local currentPointIndex = 1
+local customAutoConn
+local CustomAutoEnabled = false
+
 local function saveLeft(name)
     local hrp = getHRP()
-    if hrp then LeftPoints[name] = hrp.Position end
+    if hrp then
+        LeftPoints[name] = hrp.Position
+    end
 end
 
 local function saveRight(name)
     local hrp = getHRP()
-    if hrp then RightPoints[name] = hrp.Position end
-end
-
-local function serialize(v)
-    return {v.X, v.Y, v.Z}
-end
-
-local function deserialize(t)
-    return Vector3.new(t[1], t[2], t[3])
-end
-
-local function savePaths()
-    if writefile then
-        local data = {Left={}, Right={}}
-        for k,v in pairs(LeftPoints) do if v then data.Left[k]=serialize(v) end end
-        for k,v in pairs(RightPoints) do if v then data.Right[k]=serialize(v) end end
-        writefile(PATH_FILE, HttpService:JSONEncode(data))
+    if hrp then
+        RightPoints[name] = hrp.Position
     end
 end
 
-local function loadPaths()
-    if isfile and isfile(PATH_FILE) then
-        local data = HttpService:JSONDecode(readfile(PATH_FILE))
-        for k,v in pairs(data.Left or {}) do LeftPoints[k]=deserialize(v) end
-        for k,v in pairs(data.Right or {}) do RightPoints[k]=deserialize(v) end
+local function startCustomAuto()
+    if customAutoConn then customAutoConn:Disconnect() end
+    currentPointIndex = 1
+
+    customAutoConn = game:GetService("RunService").Heartbeat:Connect(function()
+        if not CustomAutoEnabled then return end
+
+        local hrp, hum = getHRP(), getHum()
+        if not hrp or not hum then return end
+
+        local target
+        if AutoPlayDirection == "Right" then
+            target = RightPoints[rightOrder[currentPointIndex]]
+        else
+            target = LeftPoints[leftOrder[currentPointIndex]]
+        end
+
+        if not target then return end
+
+        local direction = target - hrp.Position
+
+        if direction.Magnitude < 2 then
+            currentPointIndex += 1
+            local max = (AutoPlayDirection == "Right") and #rightOrder or #leftOrder
+            if currentPointIndex > max then currentPointIndex = 1 end
+            return
+        end
+
+        local moveDir = direction.Unit
+        hum:Move(moveDir, false)
+
+        local speed = Config.AutoPlaySpeed
+        if currentPointIndex >= 3 then speed = Config.CarrySpeed end
+
+        hrp.AssemblyLinearVelocity = Vector3.new(
+            moveDir.X * speed,
+            hrp.AssemblyLinearVelocity.Y,
+            moveDir.Z * speed
+        )
+    end)
+end
+
+local function stopCustomAuto()
+    if customAutoConn then
+        customAutoConn:Disconnect()
+        customAutoConn = nil
     end
 end
 
-local function resetPaths()
-    LeftPoints = {L1=nil,L2=nil,L3=nil,L4=nil}
-    RightPoints = {R1=nil,R2=nil,R3=nil,R4=nil}
-end
-
--- UI
 task.spawn(function()
     task.wait(2)
     if container then
@@ -1175,47 +1357,59 @@ task.spawn(function()
         title.Size = UDim2.new(1,0,0,20)
         title.BackgroundTransparency = 1
         title.Text = "AUTO PATH"
-        title.TextColor3 = Color3.fromRGB(200,200,200)
+        title.TextColor3 = Color3.fromRGB(180,180,180)
+        title.Font = Enum.Font.GothamBold
+        title.TextSize = 14
         title.Parent = container
 
-        local function makeBtn(name, isRight)
-            local b = Instance.new("TextButton")
-            b.Size = UDim2.new(1,0,0,28)
-            b.BackgroundColor3 = Color3.fromRGB(30,30,30)
-            b.Text = name.." (SET)"
-            b.TextColor3 = Color3.new(1,1,1)
-            b.Parent = container
-            Instance.new("UICorner", b)
+        local function createBtn(name, isRight)
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1,0,0,30)
+            btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+            btn.Text = name.." (SET)"
+            btn.TextColor3 = Color3.new(1,1,1)
+            btn.Font = Enum.Font.GothamBold
+            btn.TextSize = 13
+            btn.Parent = container
 
-            b.MouseButton1Click:Connect(function()
-                if isRight then saveRight(name) else saveLeft(name) end
-                b.Text = name.." ✔"
-                b.BackgroundColor3 = Color3.fromRGB(0,170,100)
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+
+            btn.MouseButton1Click:Connect(function()
+                if isRight then
+                    saveRight(name)
+                else
+                    saveLeft(name)
+                end
+                btn.Text = name.." ✔"
+                btn.BackgroundColor3 = Color3.fromRGB(0,170,100)
             end)
         end
 
-        for i=1,4 do makeBtn("L"..i,false) end
-        for i=1,4 do makeBtn("R"..i,true) end
+        createBtn("L1", false)
+        createBtn("L2", false)
+        createBtn("L3", false)
+        createBtn("L4", false)
 
-        local saveB = Instance.new("TextButton")
-        saveB.Size = UDim2.new(1,0,0,25)
-        saveB.Text = "SAVE PATH"
-        saveB.BackgroundColor3 = Color3.fromRGB(0,80,0)
-        saveB.Parent = container
-        Instance.new("UICorner", saveB)
+        createBtn("R1", true)
+        createBtn("R2", true)
+        createBtn("R3", true)
+        createBtn("R4", true)
+    end
+end)
 
-        saveB.MouseButton1Click:Connect(savePaths)
+task.spawn(function()
+    task.wait(2)
+    if btnAuto then
+        btnAuto.MouseButton1Click:Connect(function()
+            CustomAutoEnabled = not CustomAutoEnabled
+            setVisual(btnAuto, gradAuto, strokeAuto, CustomAutoEnabled, "AUTO PLAY: ON", "AUTO PLAY: OFF")
 
-        local loadB = saveB:Clone()
-        loadB.Text = "LOAD PATH"
-        loadB.Parent = container
-        loadB.MouseButton1Click:Connect(loadPaths)
-
-        local resetB = saveB:Clone()
-        resetB.Text = "RESET PATH"
-        resetB.BackgroundColor3 = Color3.fromRGB(120,0,0)
-        resetB.Parent = container
-        resetB.MouseButton1Click:Connect(resetPaths)
+            if CustomAutoEnabled then
+                startCustomAuto()
+            else
+                stopCustomAuto()
+            end
+        end)
     end
 end)
 
