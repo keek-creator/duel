@@ -1216,3 +1216,145 @@ task.spawn(function()
     end
 end)
 
+--// ===== CLEAN MERGED AUTO PATH PANEL ===== //
+
+task.spawn(function()
+    task.wait(2)
+
+    if not screenGui then return end -- your main GUI
+
+    -- MAIN PANEL
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 180, 0, 260)
+    frame.Position = UDim2.new(1, -200, 0.5, -130) -- right side
+    frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    frame.Parent = screenGui
+    frame.Name = "AutoPathPanel"
+
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0,8)
+
+    -- DRAGGING
+    local dragging, dragInput, dragStart, startPos
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    -- TITLE
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1,0,0,25)
+    title.BackgroundTransparency = 1
+    title.Text = "AUTO PATH"
+    title.TextColor3 = Color3.fromRGB(200,200,200)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 14
+    title.Parent = frame
+
+    -- LAYOUT
+    local layout = Instance.new("UIListLayout", frame)
+    layout.Padding = UDim.new(0,4)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    -- BUTTON CREATOR
+    local function makeBtn(name, isRight)
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(1,-10,0,26)
+        b.Position = UDim2.new(0,5,0,0)
+        b.BackgroundColor3 = Color3.fromRGB(35,35,35)
+        b.Text = name.." (SET)"
+        b.TextColor3 = Color3.new(1,1,1)
+        b.Font = Enum.Font.GothamBold
+        b.TextSize = 12
+        b.Parent = frame
+
+        Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+
+        b.MouseButton1Click:Connect(function()
+            if isRight then
+                saveRight(name)
+            else
+                saveLeft(name)
+            end
+
+            b.Text = name.." ✔"
+            b.BackgroundColor3 = Color3.fromRGB(0,170,100)
+        end)
+    end
+
+    -- LEFT
+    makeBtn("L1", false)
+    makeBtn("L2", false)
+    makeBtn("L3", false)
+    makeBtn("L4", false)
+
+    -- RIGHT
+    makeBtn("R1", true)
+    makeBtn("R2", true)
+    makeBtn("R3", true)
+    makeBtn("R4", true)
+
+    -- SAVE BUTTON
+    local save = Instance.new("TextButton")
+    save.Size = UDim2.new(1,-10,0,26)
+    save.BackgroundColor3 = Color3.fromRGB(0,90,0)
+    save.Text = "SAVE PATH"
+    save.TextColor3 = Color3.new(1,1,1)
+    save.Parent = frame
+    Instance.new("UICorner", save)
+
+    save.MouseButton1Click:Connect(function()
+        if savePaths then savePaths() end
+    end)
+
+    -- LOAD BUTTON
+    local load = save:Clone()
+    load.Text = "LOAD PATH"
+    load.BackgroundColor3 = Color3.fromRGB(0,70,120)
+    load.Parent = frame
+
+    load.MouseButton1Click:Connect(function()
+        if loadPaths then loadPaths() end
+    end)
+
+    -- RESET BUTTON
+    local reset = save:Clone()
+    reset.Text = "RESET PATH"
+    reset.BackgroundColor3 = Color3.fromRGB(120,0,0)
+    reset.Parent = frame
+
+    reset.MouseButton1Click:Connect(function()
+        LeftPoints = {L1=nil,L2=nil,L3=nil,L4=nil}
+        RightPoints = {R1=nil,R2=nil,R3=nil,R4=nil}
+        print("Paths reset")
+    end)
+
+end)
+
