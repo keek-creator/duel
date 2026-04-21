@@ -159,16 +159,16 @@ Config = {
     CarrySpeed = 29.4
 }
 local rightWaypoints = {
-    Vector3.new(-473.04, -6.99, 29.71),
-    Vector3.new(-486.04, -4.64, 19.04),
-    Vector3.new(-474.18, -6.85, 28.20),
+    Vector3.new(-473.47, -6.82, 27.04),
+    Vector3.new(-485.01, -4.66, 24.97),
+    Vector3.new(-473.12, -6.82, 26.98),
     Vector3.new(-474.67, -6.94, 105.48),
 }
 
 local leftWaypoints = {
-    Vector3.new(-472.49, -7.00, 90.62),
-    Vector3.new(-485.59, -4.74, 100.73),
-    Vector3.new(-474.49, -6.85, 92.60),
+    Vector3.new(-473.52, -6.82, 94.16),
+    Vector3.new(-485.84, -4.41, 94.91),
+    Vector3.new(-474.33, -6.82, 93.30),
     Vector3.new(-474.22, -6.96, 16.18),
 }
 
