@@ -1,6 +1,3 @@
-
-lol
-
 repeat task.wait() until game:IsLoaded()
 
 -- ===================== INTRO SEQUENCE =====================
