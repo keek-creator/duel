@@ -1,0 +1,1039 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local Stats = game:GetService("Stats")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+
+local ScreenGui = Instance.new('ScreenGui')
+ScreenGui.Name = 'UCT_GUI'
+ScreenGui.ResetOnSpawn = false
+ScreenGui.DisplayOrder = 999
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = CoreGui
+
+local MenuToggleBtn = Instance.new('TextButton')
+MenuToggleBtn.Name = 'MenuToggleBtn'
+MenuToggleBtn.Size = UDim2.new(0, 22, 0, 22)
+MenuToggleBtn.Position = UDim2.new(0, 8, 0, 8)
+MenuToggleBtn.BackgroundColor3 = Color3.new(0.0980392, 0.0784314, 0.137255)
+MenuToggleBtn.Text = '☰'
+MenuToggleBtn.TextColor3 = Color3.new(1, 0.784314, 0)
+MenuToggleBtn.TextSize = 14
+MenuToggleBtn.Font = Enum.Font.GothamBold
+MenuToggleBtn.Parent = ScreenGui
+
+local MenuToggleCorner = Instance.new('UICorner')
+MenuToggleCorner.CornerRadius = UDim.new(0, 5)
+MenuToggleCorner.Parent = MenuToggleBtn
+
+local MainContainer = Instance.new('Frame')
+MainContainer.Name = 'MainContainer'
+MainContainer.Size = UDim2.new(0, 440, 0, 400)
+MainContainer.Position = UDim2.new(0.5, -220, 0.5, -200)
+MainContainer.BackgroundTransparency = 1
+MainContainer.Visible = true
+MainContainer.Parent = ScreenGui
+
+local MovementPanel = Instance.new('Frame')
+MovementPanel.Name = 'MovementPanel'
+MovementPanel.Size = UDim2.new(0, 160, 0, 320)
+MovementPanel.Position = UDim2.new(0.5, -165, 0, 58)
+MovementPanel.BackgroundColor3 = Color3.new(0.00784314, 0.00784314, 0.0156863)
+MovementPanel.BorderSizePixel = 0
+MovementPanel.Parent = MainContainer
+
+local MovementPanelCorner = Instance.new('UICorner')
+MovementPanelCorner.CornerRadius = UDim.new(0, 11)
+MovementPanelCorner.Parent = MovementPanel
+
+local MovementPanelStroke = Instance.new('UIStroke')
+MovementPanelStroke.Color = Color3.new(1, 0.843137, 0)
+MovementPanelStroke.Thickness = 1
+MovementPanelStroke.Parent = MovementPanel
+
+local MovementPanelGradient = Instance.new('UIGradient')
+MovementPanelGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.new(0, 0, 0)),
+    ColorSequenceKeypoint.new(0.25, Color3.new(0.313726, 0.27451, 0)),
+    ColorSequenceKeypoint.new(0.5, Color3.new(1, 0.843137, 0)),
+    ColorSequenceKeypoint.new(0.75, Color3.new(0.313726, 0.27451, 0)),
+    ColorSequenceKeypoint.new(1, Color3.new(0, 0, 0))
+})
+MovementPanelGradient.Transparency = NumberSequence.new({
+    NumberSequenceKeypoint.new(0, 0.8),
+    NumberSequenceKeypoint.new(0.25, 0.4),
+    NumberSequenceKeypoint.new(0.5, 0),
+    NumberSequenceKeypoint.new(0.75, 0.4),
+    NumberSequenceKeypoint.new(1, 0.8)
+})
+MovementPanelGradient.Parent = MovementPanelStroke
+
+local MovementTitle = Instance.new('TextLabel')
+MovementTitle.Text = 'Movement Settings'
+MovementTitle.Font = Enum.Font.GothamBold
+MovementTitle.Size = UDim2.new(1, -20, 0, 18)
+MovementTitle.Position = UDim2.new(0, 8, 0, 6)
+MovementTitle.BackgroundTransparency = 1
+MovementTitle.TextColor3 = Color3.new(1, 1, 1)
+MovementTitle.TextSize = 10
+MovementTitle.TextXAlignment = Enum.TextXAlignment.Left
+MovementTitle.Parent = MovementPanel
+
+local MovementScrolling = Instance.new('ScrollingFrame')
+MovementScrolling.ScrollBarImageColor3 = Color3.new(1, 0.784314, 0)
+MovementScrolling.ScrollBarImageTransparency = 0.3
+MovementScrolling.ScrollBarThickness = 3
+MovementScrolling.ClipsDescendants = true
+MovementScrolling.Size = UDim2.new(1, -16, 1, -32)
+MovementScrolling.Position = UDim2.new(0, 8, 0, 28)
+MovementScrolling.CanvasSize = UDim2.new(0, 0, 0, 400)
+MovementScrolling.BackgroundTransparency = 1
+MovementScrolling.BorderSizePixel = 0
+MovementScrolling.ZIndex = 12
+MovementScrolling.Parent = MovementPanel
+
+local MovementListLayout = Instance.new('UIListLayout')
+MovementListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+MovementListLayout.Padding = UDim.new(0, 8)
+MovementListLayout.Parent = MovementScrolling
+
+local MiscPanel = Instance.new('Frame')
+MiscPanel.Name = 'MiscPanel'
+MiscPanel.Size = UDim2.new(0, 160, 0, 320)
+MiscPanel.Position = UDim2.new(0.5, 5, 0, 58)
+MiscPanel.BackgroundColor3 = Color3.new(0.00784314, 0.00784314, 0.0156863)
+MiscPanel.BorderSizePixel = 0
+MiscPanel.Parent = MainContainer
+
+local MiscPanelCorner = Instance.new('UICorner')
+MiscPanelCorner.CornerRadius = UDim.new(0, 11)
+MiscPanelCorner.Parent = MiscPanel
+
+local MiscPanelStroke = Instance.new('UIStroke')
+MiscPanelStroke.Color = Color3.new(1, 0.843137, 0)
+MiscPanelStroke.Thickness = 1
+MiscPanelStroke.Parent = MiscPanel
+
+local MiscPanelGradient = Instance.new('UIGradient')
+MiscPanelGradient.Color = MovementPanelGradient.Color
+MiscPanelGradient.Transparency = MovementPanelGradient.Transparency
+MiscPanelGradient.Parent = MiscPanelStroke
+
+local MiscTitle = Instance.new('TextLabel')
+MiscTitle.Text = 'Misc Settings'
+MiscTitle.Font = Enum.Font.GothamBold
+MiscTitle.Size = UDim2.new(1, -20, 0, 18)
+MiscTitle.Position = UDim2.new(0, 8, 0, 6)
+MiscTitle.BackgroundTransparency = 1
+MiscTitle.TextColor3 = Color3.new(1, 1, 1)
+MiscTitle.TextSize = 10
+MiscTitle.TextXAlignment = Enum.TextXAlignment.Right
+MiscTitle.Parent = MiscPanel
+
+local MiscScrolling = Instance.new('ScrollingFrame')
+MiscScrolling.ScrollBarImageColor3 = Color3.new(1, 0.784314, 0)
+MiscScrolling.ScrollBarImageTransparency = 0.3
+MiscScrolling.ScrollBarThickness = 3
+MiscScrolling.ClipsDescendants = true
+MiscScrolling.Size = UDim2.new(1, -16, 1, -32)
+MiscScrolling.Position = UDim2.new(0, 8, 0, 28)
+MiscScrolling.CanvasSize = UDim2.new(0, 0, 0, 480)
+MiscScrolling.BackgroundTransparency = 1
+MiscScrolling.BorderSizePixel = 0
+MiscScrolling.ZIndex = 12
+MiscScrolling.Parent = MiscPanel
+
+local MiscListLayout = Instance.new('UIListLayout')
+MiscListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+MiscListLayout.Padding = UDim.new(0, 8)
+MiscListLayout.Parent = MiscScrolling
+
+local TitleBar = Instance.new('Frame')
+TitleBar.Name = 'TitleBar'
+TitleBar.Size = UDim2.new(0, 330, 0, 42)
+TitleBar.Position = UDim2.new(0.5, -165, 0, 8)
+TitleBar.BackgroundColor3 = Color3.new(0.00784314, 0.00784314, 0.0156863)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainContainer
+
+local TitleBarCorner = Instance.new('UICorner')
+TitleBarCorner.CornerRadius = UDim.new(0, 10)
+TitleBarCorner.Parent = TitleBar
+
+local TitleBarStroke = Instance.new('UIStroke')
+TitleBarStroke.Color = Color3.new(1, 0.843137, 0)
+TitleBarStroke.Thickness = 1.2
+TitleBarStroke.Parent = TitleBar
+
+local TitleBarGradient = Instance.new('UIGradient')
+TitleBarGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.new(0, 0, 0)),
+    ColorSequenceKeypoint.new(0.25, Color3.new(0.313726, 0.27451, 0)),
+    ColorSequenceKeypoint.new(0.5, Color3.new(1, 0.843137, 0)),
+    ColorSequenceKeypoint.new(0.75, Color3.new(0.313726, 0.27451, 0)),
+    ColorSequenceKeypoint.new(1, Color3.new(0, 0, 0))
+})
+TitleBarGradient.Transparency = NumberSequence.new({
+    NumberSequenceKeypoint.new(0, 0.8),
+    NumberSequenceKeypoint.new(0.25, 0.4),
+    NumberSequenceKeypoint.new(0.5, 0),
+    NumberSequenceKeypoint.new(0.75, 0.4),
+    NumberSequenceKeypoint.new(1, 0.8)
+})
+TitleBarGradient.Parent = TitleBarStroke
+
+local MainTitle = Instance.new('TextLabel')
+MainTitle.Text = 'AMBITIOUS HUB'
+MainTitle.Font = Enum.Font.GothamBlack
+MainTitle.Size = UDim2.new(1, -20, 0, 22)
+MainTitle.Position = UDim2.new(0, 10, 0, 5)
+MainTitle.BackgroundTransparency = 1
+MainTitle.TextColor3 = Color3.new(1, 1, 1)
+MainTitle.TextSize = 16
+MainTitle.TextXAlignment = Enum.TextXAlignment.Center
+MainTitle.Parent = TitleBar
+
+local SubTitle = Instance.new('TextLabel')
+SubTitle.Text = 'https://discord.gg/ambitioushub'
+SubTitle.Font = Enum.Font.Gotham
+SubTitle.Size = UDim2.new(1, -20, 0, 14)
+SubTitle.Position = UDim2.new(0, 10, 0, 26)
+SubTitle.BackgroundTransparency = 1
+SubTitle.TextColor3 = Color3.new(1, 0.843137, 0)
+SubTitle.TextSize = 8
+SubTitle.TextXAlignment = Enum.TextXAlignment.Center
+SubTitle.Parent = TitleBar
+
+local animatedDots = {}
+
+local function createAnimatedDot(frame, startPosX, startPosY, speed, trans)
+    local dot = Instance.new('Frame')
+    dot.Size = UDim2.new(0, 2, 0, 2)
+    dot.Position = UDim2.new(startPosX, 0, startPosY, 0)
+    dot.BackgroundColor3 = Color3.new(1, 1, 1)
+    dot.BackgroundTransparency = trans or 0.65
+    dot.BorderSizePixel = 0
+    dot.ZIndex = 2
+    dot.Parent = frame
+    
+    local dotCorner = Instance.new('UICorner')
+    dotCorner.CornerRadius = UDim.new(1, 0)
+    dotCorner.Parent = dot
+    
+    table.insert(animatedDots, {
+        dot = dot,
+        startY = startPosY,
+        speed = speed,
+        phase = math.random() * 100
+    })
+    
+    return dot
+end
+
+createAnimatedDot(TitleBar, 0.05, 0.2, 0, 0.5)
+createAnimatedDot(TitleBar, 0.1, 0.5, 0, 0.6)
+createAnimatedDot(TitleBar, 0.15, 0.8, 0, 0.4)
+createAnimatedDot(TitleBar, 0.25, 0.3, 0, 0.7)
+createAnimatedDot(TitleBar, 0.3, 0.7, 0, 0.3)
+createAnimatedDot(TitleBar, 0.4, 0.4, 0, 0.5)
+createAnimatedDot(TitleBar, 0.45, 0.9, 0, 0.6)
+createAnimatedDot(TitleBar, 0.55, 0.2, 0, 0.4)
+createAnimatedDot(TitleBar, 0.6, 0.6, 0, 0.7)
+createAnimatedDot(TitleBar, 0.7, 0.3, 0, 0.5)
+createAnimatedDot(TitleBar, 0.75, 0.8, 0, 0.6)
+createAnimatedDot(TitleBar, 0.85, 0.4, 0, 0.4)
+createAnimatedDot(TitleBar, 0.9, 0.7, 0, 0.7)
+createAnimatedDot(TitleBar, 0.95, 0.2, 0, 0.5)
+
+for i = 1, 30 do
+    local xPos = math.random() * 0.9 + 0.05
+    local startY = math.random() * 0.9 + 0.05
+    local speed = 0.01 + math.random() * 0.03
+    createAnimatedDot(MovementPanel, xPos, startY, speed, 0.3 + math.random() * 0.4)
+end
+
+for i = 1, 30 do
+    local xPos = math.random() * 0.9 + 0.05
+    local startY = math.random() * 0.9 + 0.05
+    local speed = 0.01 + math.random() * 0.03
+    createAnimatedDot(MiscPanel, xPos, startY, speed, 0.3 + math.random() * 0.4)
+end
+
+for i = 1, 20 do
+    local xPos = math.random() * 0.9 + 0.05
+    local startY = math.random() * 0.9 + 0.05
+    local speed = 0.005 + math.random() * 0.01
+    createAnimatedDot(MovementPanel, xPos, startY, speed, 0.4 + math.random() * 0.3)
+    createAnimatedDot(MiscPanel, xPos, startY, speed, 0.4 + math.random() * 0.3)
+end
+
+local lastTime = tick()
+RunService.Heartbeat:Connect(function()
+    local currentTime = tick()
+    local dt = currentTime - lastTime
+    lastTime = currentTime
+    
+    for _, dotData in ipairs(animatedDots) do
+        if dotData.speed > 0 then
+            local dot = dotData.dot
+            local currentPos = dot.Position.Y.Scale
+            local newY = currentPos + (dotData.speed * dt * 0.5)
+            
+            if newY > 1.05 then
+                newY = -0.05
+            end
+            
+            dot.Position = UDim2.new(dot.Position.X.Scale, 0, newY, 0)
+        end
+    end
+end)
+
+local function createToggle(parent, text, keybind, hasKeybind)
+    local frame = Instance.new('Frame')
+    frame.Size = UDim2.new(1, -8, 0, 26)
+    frame.BackgroundColor3 = Color3.new(0.0980392, 0.0784314, 0.137255)
+    frame.BackgroundTransparency = 0.1
+    frame.BorderSizePixel = 0
+    frame.Parent = parent
+    
+    local frameCorner = Instance.new('UICorner')
+    frameCorner.CornerRadius = UDim.new(0, 6)
+    frameCorner.Parent = frame
+    
+    local darkerYellow = Color3.new(0.9, 0.7, 0.1)
+    
+    if hasKeybind and keybind then
+        local keySquare = Instance.new('Frame')
+        keySquare.Size = UDim2.new(0, 18, 0, 18)
+        keySquare.Position = UDim2.new(0, 4, 0, 4)
+        keySquare.BackgroundColor3 = darkerYellow
+        keySquare.BackgroundTransparency = 0
+        keySquare.Parent = frame
+        
+        local keySquareCorner = Instance.new('UICorner')
+        keySquareCorner.CornerRadius = UDim.new(0, 4)
+        keySquareCorner.Parent = keySquare
+        
+        local keyLabel = Instance.new('TextLabel')
+        keyLabel.Text = keybind
+        keyLabel.Font = Enum.Font.GothamBold
+        keyLabel.Size = UDim2.new(1, 0, 1, 0)
+        keyLabel.BackgroundTransparency = 1
+        keyLabel.TextColor3 = Color3.new(1, 1, 1)
+        keyLabel.TextSize = 10
+        keyLabel.TextXAlignment = Enum.TextXAlignment.Center
+        keyLabel.ZIndex = 15
+        keyLabel.Parent = keySquare
+    end
+    
+    local label = Instance.new('TextLabel')
+    label.Text = text
+    label.Font = Enum.Font.GothamMedium
+    label.Size = UDim2.new(hasKeybind and 0.5 or 0.7, 0, 1, 0)
+    label.Position = hasKeybind and UDim2.new(0, 28, 0, 0) or UDim2.new(0, 6, 0, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.TextSize = 9
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 14
+    label.Parent = frame
+    
+    local toggleFrame = Instance.new('Frame')
+    toggleFrame.Size = UDim2.new(0, 32, 0, 16)
+    toggleFrame.Position = UDim2.new(1, -40, 0.5, -8)
+    toggleFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+    toggleFrame.BackgroundTransparency = 0
+    toggleFrame.Parent = frame
+    
+    local toggleCorner = Instance.new('UICorner')
+    toggleCorner.CornerRadius = UDim.new(0, 8)
+    toggleCorner.Parent = toggleFrame
+    
+    local knob = Instance.new('Frame')
+    knob.Size = UDim2.new(0, 12, 0, 12)
+    knob.Position = UDim2.new(0, 2, 0.5, -6)
+    knob.BackgroundColor3 = Color3.new(1, 1, 1)
+    knob.ZIndex = 15
+    knob.Parent = toggleFrame
+    
+    local knobCorner = Instance.new('UICorner')
+    knobCorner.CornerRadius = UDim.new(0, 6)
+    knobCorner.Parent = knob
+    
+    local button = Instance.new('TextButton')
+    button.Size = UDim2.new(1, 0, 1, 0)
+    button.BackgroundTransparency = 1
+    button.Text = ""
+    button.ZIndex = 16
+    button.Parent = frame
+    
+    return frame, knob, toggleFrame, button
+end
+
+local function createSlider(parent, text, defaultValue, keybind, hasKeybind)
+    local frame = Instance.new('Frame')
+    frame.Size = UDim2.new(1, -8, 0, 48)
+    frame.BackgroundColor3 = Color3.new(0.0980392, 0.0784314, 0.137255)
+    frame.BackgroundTransparency = 0.1
+    frame.BorderSizePixel = 0
+    frame.Parent = parent
+    
+    local frameCorner = Instance.new('UICorner')
+    frameCorner.CornerRadius = UDim.new(0, 6)
+    frameCorner.Parent = frame
+    
+    local darkerYellow = Color3.new(0.9, 0.7, 0.1)
+    
+    if hasKeybind and keybind then
+        local keySquare = Instance.new('Frame')
+        keySquare.Size = UDim2.new(0, 18, 0, 18)
+        keySquare.Position = UDim2.new(0, 4, 0, 4)
+        keySquare.BackgroundColor3 = darkerYellow
+        keySquare.BackgroundTransparency = 0
+        keySquare.Parent = frame
+        
+        local keySquareCorner = Instance.new('UICorner')
+        keySquareCorner.CornerRadius = UDim.new(0, 4)
+        keySquareCorner.Parent = keySquare
+        
+        local keyLabel = Instance.new('TextLabel')
+        keyLabel.Text = keybind
+        keyLabel.Font = Enum.Font.GothamBold
+        keyLabel.Size = UDim2.new(1, 0, 1, 0)
+        keyLabel.BackgroundTransparency = 1
+        keyLabel.TextColor3 = Color3.new(1, 1, 1)
+        keyLabel.TextSize = 10
+        keyLabel.TextXAlignment = Enum.TextXAlignment.Center
+        keyLabel.ZIndex = 15
+        keyLabel.Parent = keySquare
+    end
+    
+    local label = Instance.new('TextLabel')
+    label.Text = text
+    label.Font = Enum.Font.Gotham
+    label.Size = UDim2.new(hasKeybind and 0.5 or 0.7, 0, 0, 12)
+    label.Position = hasKeybind and UDim2.new(0, 28, 0, 5) or UDim2.new(0, 6, 0, 5)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.TextSize = 8
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+    
+    local valueBox = Instance.new('TextBox')
+    valueBox.TextColor3 = Color3.new(1, 0.843137, 0)
+    valueBox.Text = tostring(defaultValue)
+    valueBox.Font = Enum.Font.GothamBold
+    valueBox.ZIndex = 14
+    valueBox.Position = UDim2.new(1, -32, 0, 5)
+    valueBox.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+    valueBox.BackgroundTransparency = 0
+    valueBox.ClearTextOnFocus = false
+    valueBox.TextSize = 8
+    valueBox.Size = UDim2.new(0, 24, 0, 12)
+    valueBox.Parent = frame
+    
+    local valueBoxCorner = Instance.new('UICorner')
+    valueBoxCorner.CornerRadius = UDim.new(0, 4)
+    valueBoxCorner.Parent = valueBox
+    
+    local slider = Instance.new('Frame')
+    slider.Size = UDim2.new(0.9, 0, 0, 4)
+    slider.Position = UDim2.new(0.05, 0, 0, 32)
+    slider.BackgroundColor3 = Color3.new(0, 0, 0)
+    slider.BackgroundTransparency = 0.3
+    slider.Parent = frame
+    
+    local sliderCorner = Instance.new('UICorner')
+    sliderCorner.CornerRadius = UDim.new(0, 2)
+    sliderCorner.Parent = slider
+    
+    local fill = Instance.new('Frame')
+    fill.Size = UDim2.new(0.5, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.new(1, 0.843137, 0)
+    fill.BackgroundTransparency = 0
+    fill.Parent = slider
+    
+    local fillCorner = Instance.new('UICorner')
+    fillCorner.CornerRadius = UDim.new(0, 2)
+    fillCorner.Parent = fill
+    
+    local knob = Instance.new('Frame')
+    knob.Size = UDim2.new(0, 10, 0, 10)
+    knob.Position = UDim2.new(0.5, -5, 0.5, -5)
+    knob.BackgroundColor3 = Color3.new(1, 1, 1)
+    knob.ZIndex = 16
+    knob.Parent = slider
+    
+    local knobCorner = Instance.new('UICorner')
+    knobCorner.CornerRadius = UDim.new(0, 5)
+    knobCorner.Parent = knob
+    
+    return frame, knob, fill, valueBox
+end
+
+local speedFrame, speedKnob, speedToggle, speedButton = createToggle(MovementScrolling, 'Speed Boost', 'V', true)
+local boostFrame, boostKnob, boostFill, boostBox = createSlider(MovementScrolling, 'Boost Speed', 30, 'B', true)
+
+local boosterFrame = Instance.new('Frame')
+boosterFrame.Size = UDim2.new(1, -8, 0, 90)
+boosterFrame.BackgroundColor3 = Color3.new(0.0980392, 0.0784314, 0.137255)
+boosterFrame.BackgroundTransparency = 0.1
+boosterFrame.BorderSizePixel = 0
+boosterFrame.Parent = MovementScrolling
+
+local boosterCorner = Instance.new('UICorner')
+boosterCorner.CornerRadius = UDim.new(0, 6)
+boosterCorner.Parent = boosterFrame
+
+local boosterHeaderFrame = Instance.new('Frame')
+boosterHeaderFrame.Size = UDim2.new(1, 0, 0, 20)
+boosterHeaderFrame.BackgroundTransparency = 1
+boosterHeaderFrame.Parent = boosterFrame
+
+local darkerYellow = Color3.new(0.9, 0.7, 0.1)
+
+local boosterKeySquare = Instance.new('Frame')
+boosterKeySquare.Size = UDim2.new(0, 18, 0, 18)
+boosterKeySquare.Position = UDim2.new(0, 5, 0.5, -9)
+boosterKeySquare.BackgroundColor3 = darkerYellow
+boosterKeySquare.BackgroundTransparency = 0
+boosterKeySquare.Parent = boosterHeaderFrame
+
+local boosterKeySquareCorner = Instance.new('UICorner')
+boosterKeySquareCorner.CornerRadius = UDim.new(0, 4)
+boosterKeySquareCorner.Parent = boosterKeySquare
+
+local boosterKeyLabel = Instance.new('TextLabel')
+boosterKeyLabel.Text = 'B'
+boosterKeyLabel.Font = Enum.Font.GothamBold
+boosterKeyLabel.Size = UDim2.new(1, 0, 1, 0)
+boosterKeyLabel.BackgroundTransparency = 1
+boosterKeyLabel.TextColor3 = Color3.new(1, 1, 1)
+boosterKeyLabel.TextSize = 10
+boosterKeyLabel.TextXAlignment = Enum.TextXAlignment.Center
+boosterKeyLabel.ZIndex = 15
+boosterKeyLabel.Parent = boosterKeySquare
+
+local boosterLabel = Instance.new('TextLabel')
+boosterLabel.Text = 'Booster'
+boosterLabel.Font = Enum.Font.GothamBold
+boosterLabel.Size = UDim2.new(0.5, 0, 1, 0)
+boosterLabel.Position = UDim2.new(0, 28, 0, 0)
+boosterLabel.BackgroundTransparency = 1
+boosterLabel.TextColor3 = Color3.new(1, 1, 1)
+boosterLabel.TextSize = 9
+boosterLabel.TextXAlignment = Enum.TextXAlignment.Left
+boosterLabel.Parent = boosterHeaderFrame
+
+local walkspeedLabel = Instance.new('TextLabel')
+walkspeedLabel.Text = 'Walkspeed'
+walkspeedLabel.Font = Enum.Font.Gotham
+walkspeedLabel.Size = UDim2.new(0, 70, 0, 12)
+walkspeedLabel.Position = UDim2.new(0, 5, 0, 24)
+walkspeedLabel.BackgroundTransparency = 1
+walkspeedLabel.TextColor3 = Color3.new(1, 1, 1)
+walkspeedLabel.TextSize = 8
+walkspeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+walkspeedLabel.Parent = boosterFrame
+
+local walkspeedBox = Instance.new('TextBox')
+walkspeedBox.TextColor3 = Color3.new(1, 0.843137, 0)
+walkspeedBox.Text = '29.2'
+walkspeedBox.Font = Enum.Font.GothamBold
+walkspeedBox.ZIndex = 14
+walkspeedBox.Position = UDim2.new(1, -32, 0, 24)
+walkspeedBox.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+walkspeedBox.BackgroundTransparency = 0
+walkspeedBox.ClearTextOnFocus = false
+walkspeedBox.TextSize = 8
+walkspeedBox.Size = UDim2.new(0, 24, 0, 12)
+walkspeedBox.Parent = boosterFrame
+
+local walkspeedBoxCorner = Instance.new('UICorner')
+walkspeedBoxCorner.CornerRadius = UDim.new(0, 4)
+walkspeedBoxCorner.Parent = walkspeedBox
+
+local walkspeedSlider = Instance.new('Frame')
+walkspeedSlider.Size = UDim2.new(0.9, 0, 0, 3)
+walkspeedSlider.Position = UDim2.new(0.05, 0, 0, 44)
+walkspeedSlider.BackgroundColor3 = Color3.new(0, 0, 0)
+walkspeedSlider.BackgroundTransparency = 0.3
+walkspeedSlider.Parent = boosterFrame
+
+local walkspeedSliderCorner = Instance.new('UICorner')
+walkspeedSliderCorner.CornerRadius = UDim.new(0, 2)
+walkspeedSliderCorner.Parent = walkspeedSlider
+
+local walkspeedFill = Instance.new('Frame')
+walkspeedFill.Size = UDim2.new(0.5, 0, 1, 0)
+walkspeedFill.BackgroundColor3 = Color3.new(1, 0.843137, 0)
+walkspeedFill.BackgroundTransparency = 0
+walkspeedFill.Parent = walkspeedSlider
+
+local walkspeedFillCorner = Instance.new('UICorner')
+walkspeedFillCorner.CornerRadius = UDim.new(0, 2)
+walkspeedFillCorner.Parent = walkspeedFill
+
+local walkspeedKnob = Instance.new('Frame')
+walkspeedKnob.Size = UDim2.new(0, 10, 0, 10)
+walkspeedKnob.Position = UDim2.new(0.5, -5, 0.5, -5)
+walkspeedKnob.BackgroundColor3 = Color3.new(1, 1, 1)
+walkspeedKnob.ZIndex = 16
+walkspeedKnob.Parent = walkspeedSlider
+
+local walkspeedKnobCorner = Instance.new('UICorner')
+walkspeedKnobCorner.CornerRadius = UDim.new(0, 5)
+walkspeedKnobCorner.Parent = walkspeedKnob
+
+local gravityLabel = Instance.new('TextLabel')
+gravityLabel.Text = 'Gravity'
+gravityLabel.Font = Enum.Font.Gotham
+gravityLabel.Size = UDim2.new(0, 70, 0, 12)
+gravityLabel.Position = UDim2.new(0, 5, 0, 58)
+gravityLabel.BackgroundTransparency = 1
+gravityLabel.TextColor3 = Color3.new(1, 1, 1)
+gravityLabel.TextSize = 8
+gravityLabel.TextXAlignment = Enum.TextXAlignment.Left
+gravityLabel.Parent = boosterFrame
+
+local gravityBox = Instance.new('TextBox')
+gravityBox.TextColor3 = Color3.new(1, 0.843137, 0)
+gravityBox.Text = '100'
+gravityBox.Font = Enum.Font.GothamBold
+gravityBox.ZIndex = 14
+gravityBox.Position = UDim2.new(1, -32, 0, 58)
+gravityBox.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+gravityBox.BackgroundTransparency = 0
+gravityBox.ClearTextOnFocus = false
+gravityBox.TextSize = 8
+gravityBox.Size = UDim2.new(0, 24, 0, 12)
+gravityBox.Parent = boosterFrame
+
+local gravityBoxCorner = Instance.new('UICorner')
+gravityBoxCorner.CornerRadius = UDim.new(0, 4)
+gravityBoxCorner.Parent = gravityBox
+
+local gravitySlider = Instance.new('Frame')
+gravitySlider.Size = UDim2.new(0.9, 0, 0, 3)
+gravitySlider.Position = UDim2.new(0.05, 0, 0, 78)
+gravitySlider.BackgroundColor3 = Color3.new(0, 0, 0)
+gravitySlider.BackgroundTransparency = 0.3
+gravitySlider.Parent = boosterFrame
+
+local gravitySliderCorner = Instance.new('UICorner')
+gravitySliderCorner.CornerRadius = UDim.new(0, 2)
+gravitySliderCorner.Parent = gravitySlider
+
+local gravityFill = Instance.new('Frame')
+gravityFill.Size = UDim2.new(0.5, 0, 1, 0)
+gravityFill.BackgroundColor3 = Color3.new(1, 0.843137, 0)
+gravityFill.BackgroundTransparency = 0
+gravityFill.Parent = gravitySlider
+
+local gravityFillCorner = Instance.new('UICorner')
+gravityFillCorner.CornerRadius = UDim.new(0, 2)
+gravityFillCorner.Parent = gravityFill
+
+local gravityKnob = Instance.new('Frame')
+gravityKnob.Size = UDim2.new(0, 10, 0, 10)
+gravityKnob.Position = UDim2.new(0.5, -5, 0.5, -5)
+gravityKnob.BackgroundColor3 = Color3.new(1, 1, 1)
+gravityKnob.ZIndex = 16
+gravityKnob.Parent = gravitySlider
+
+local gravityKnobCorner = Instance.new('UICorner')
+gravityKnobCorner.CornerRadius = UDim.new(0, 5)
+gravityKnobCorner.Parent = gravityKnob
+
+local platformFrame, platformKnob, platformToggle, platformButton = createToggle(MovementScrolling, 'Platform', 'Q', true)
+
+local spinBotFrame = Instance.new('Frame')
+spinBotFrame.Size = UDim2.new(1, -8, 0, 48)
+spinBotFrame.BackgroundColor3 = Color3.new(0.0980392, 0.0784314, 0.137255)
+spinBotFrame.BackgroundTransparency = 0.1
+spinBotFrame.BorderSizePixel = 0
+spinBotFrame.Parent = MovementScrolling
+
+local spinBotCorner = Instance.new('UICorner')
+spinBotCorner.CornerRadius = UDim.new(0, 6)
+spinBotCorner.Parent = spinBotFrame
+
+local spinBotLabel = Instance.new('TextLabel')
+spinBotLabel.Text = 'SpinBot'
+spinBotLabel.Font = Enum.Font.GothamBold
+spinBotLabel.Size = UDim2.new(0, 70, 0, 16)
+spinBotLabel.Position = UDim2.new(0, 5, 0, 4)
+spinBotLabel.BackgroundTransparency = 1
+spinBotLabel.TextColor3 = Color3.new(1, 1, 1)
+spinBotLabel.TextSize = 9
+spinBotLabel.TextXAlignment = Enum.TextXAlignment.Left
+spinBotLabel.Parent = spinBotFrame
+
+local spinSpeedLabel = Instance.new('TextLabel')
+spinSpeedLabel.Text = 'Spin Speed'
+spinSpeedLabel.Font = Enum.Font.Gotham
+spinSpeedLabel.Size = UDim2.new(0, 70, 0, 12)
+spinSpeedLabel.Position = UDim2.new(0, 5, 0, 24)
+spinSpeedLabel.BackgroundTransparency = 1
+spinSpeedLabel.TextColor3 = Color3.new(1, 1, 1)
+spinSpeedLabel.TextSize = 8
+spinSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+spinSpeedLabel.Parent = spinBotFrame
+
+local spinSpeedBox = Instance.new('TextBox')
+spinSpeedBox.TextColor3 = Color3.new(1, 0.843137, 0)
+spinSpeedBox.Text = '50'
+spinSpeedBox.Font = Enum.Font.GothamBold
+spinSpeedBox.ZIndex = 14
+spinSpeedBox.Position = UDim2.new(1, -32, 0, 24)
+spinSpeedBox.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+spinSpeedBox.BackgroundTransparency = 0
+spinSpeedBox.ClearTextOnFocus = false
+spinSpeedBox.TextSize = 8
+spinSpeedBox.Size = UDim2.new(0, 24, 0, 12)
+spinSpeedBox.Parent = spinBotFrame
+
+local spinSpeedBoxCorner = Instance.new('UICorner')
+spinSpeedBoxCorner.CornerRadius = UDim.new(0, 4)
+spinSpeedBoxCorner.Parent = spinSpeedBox
+
+local spinSpeedSlider = Instance.new('Frame')
+spinSpeedSlider.Size = UDim2.new(0.9, 0, 0, 3)
+spinSpeedSlider.Position = UDim2.new(0.05, 0, 0, 44)
+spinSpeedSlider.BackgroundColor3 = Color3.new(0, 0, 0)
+spinSpeedSlider.BackgroundTransparency = 0.3
+spinSpeedSlider.Parent = spinBotFrame
+
+local spinSpeedSliderCorner = Instance.new('UICorner')
+spinSpeedSliderCorner.CornerRadius = UDim.new(0, 2)
+spinSpeedSliderCorner.Parent = spinSpeedSlider
+
+local spinSpeedFill = Instance.new('Frame')
+spinSpeedFill.Size = UDim2.new(0.5, 0, 1, 0)
+spinSpeedFill.BackgroundColor3 = Color3.new(1, 0.843137, 0)
+spinSpeedFill.BackgroundTransparency = 0
+spinSpeedFill.Parent = spinSpeedSlider
+
+local spinSpeedFillCorner = Instance.new('UICorner')
+spinSpeedFillCorner.CornerRadius = UDim.new(0, 2)
+spinSpeedFillCorner.Parent = spinSpeedFill
+
+local spinSpeedKnob = Instance.new('Frame')
+spinSpeedKnob.Size = UDim2.new(0, 10, 0, 10)
+spinSpeedKnob.Position = UDim2.new(0.5, -5, 0.5, -5)
+spinSpeedKnob.BackgroundColor3 = Color3.new(1, 1, 1)
+spinSpeedKnob.ZIndex = 16
+spinSpeedKnob.Parent = spinSpeedSlider
+
+local spinSpeedKnobCorner = Instance.new('UICorner')
+spinSpeedKnobCorner.CornerRadius = UDim.new(0, 5)
+spinSpeedKnobCorner.Parent = spinSpeedKnob
+
+local unwalkFrame, unwalkKnob, unwalkToggle, unwalkButton = createToggle(MovementScrolling, 'Unwalk', nil, false)
+
+local animFrame = Instance.new('Frame')
+animFrame.Size = UDim2.new(1, -8, 0, 48)
+animFrame.BackgroundColor3 = Color3.new(0.0980392, 0.0784314, 0.137255)
+animFrame.BackgroundTransparency = 0.1
+animFrame.BorderSizePixel = 0
+animFrame.Parent = MiscScrolling
+
+local animFrameCorner = Instance.new('UICorner')
+animFrameCorner.CornerRadius = UDim.new(0, 6)
+animFrameCorner.Parent = animFrame
+
+local animLabel = Instance.new('TextLabel')
+animLabel.Text = 'GUI Animations'
+animLabel.Font = Enum.Font.Gotham
+animLabel.Size = UDim2.new(1, 0, 0, 12)
+animLabel.Position = UDim2.new(0, 5, 0, 4)
+animLabel.BackgroundTransparency = 1
+animLabel.TextColor3 = Color3.new(1, 1, 1)
+animLabel.TextSize = 8
+animLabel.TextXAlignment = Enum.TextXAlignment.Left
+animLabel.Parent = animFrame
+
+local animOptions = Instance.new('Frame')
+animOptions.Size = UDim2.new(0.9, 0, 0, 22)
+animOptions.Position = UDim2.new(0.05, 0, 0, 20)
+animOptions.BackgroundColor3 = Color3.new(0.156863, 0.137255, 0.196078)
+animOptions.BackgroundTransparency = 0.1
+animOptions.Parent = animFrame
+
+local animOptionsCorner = Instance.new('UICorner')
+animOptionsCorner.CornerRadius = UDim.new(0, 5)
+animOptionsCorner.Parent = animOptions
+
+local animOptionsLabel = Instance.new('TextLabel')
+animOptionsLabel.Text = 'Dots'
+animOptionsLabel.Position = UDim2.new(0, 8, 0, 0)
+animOptionsLabel.Size = UDim2.new(1, -28, 1, 0)
+animOptionsLabel.BackgroundTransparency = 1
+animOptionsLabel.TextColor3 = Color3.new(1, 1, 1)
+animOptionsLabel.TextSize = 8
+animOptionsLabel.TextXAlignment = Enum.TextXAlignment.Left
+animOptionsLabel.Font = Enum.Font.Gotham
+animOptionsLabel.Parent = animOptions
+
+local animLeft = Instance.new('TextButton')
+animLeft.TextColor3 = Color3.new(1, 0.784314, 0)
+animLeft.Text = '<'
+animLeft.Position = UDim2.new(0, 4, 0.5, -6)
+animLeft.Size = UDim2.new(0, 12, 0, 12)
+animLeft.BackgroundColor3 = Color3.new(0.156863, 0.137255, 0.196078)
+animLeft.BackgroundTransparency = 0.1
+animLeft.TextSize = 8
+animLeft.Font = Enum.Font.GothamBold
+animLeft.Parent = animOptions
+
+local animLeftCorner = Instance.new('UICorner')
+animLeftCorner.CornerRadius = UDim.new(0, 3)
+animLeftCorner.Parent = animLeft
+
+local animRight = Instance.new('TextButton')
+animRight.TextColor3 = Color3.new(1, 0.784314, 0)
+animRight.Text = '>'
+animRight.Position = UDim2.new(1, -16, 0.5, -6)
+animRight.Size = UDim2.new(0, 12, 0, 12)
+animRight.BackgroundColor3 = Color3.new(0.156863, 0.137255, 0.196078)
+animRight.BackgroundTransparency = 0.1
+animRight.TextSize = 8
+animRight.Font = Enum.Font.GothamBold
+animRight.Parent = animOptions
+
+local animRightCorner = Instance.new('UICorner')
+animRightCorner.CornerRadius = UDim.new(0, 3)
+animRightCorner.Parent = animRight
+
+local autoInvisibleFrame, autoInvisibleKnob, autoInvisibleToggle, autoInvisibleButton = createToggle(MiscScrolling, 'Auto Invisible', nil, false)
+local instantGrabFrame, instantGrabKnob, instantGrabToggle, instantGrabButton = createToggle(MiscScrolling, 'Instant Grab', nil, false)
+local autoStealFrame, autoStealKnob, autoStealToggle, autoStealButton = createToggle(MiscScrolling, 'Auto Steal', nil, false)
+local displayAutoPlayFrame, displayAutoPlayKnob, displayAutoPlayToggle, displayAutoPlayButton = createToggle(MiscScrolling, 'Display Auto Play', nil, false)
+
+local playBeforeFrame, playBeforeKnob, playBeforeFill, playBeforeBox = createSlider(MiscScrolling, 'Play Before', 55, nil, false)
+local playAfterFrame, playAfterKnob, playAfterFill, playAfterBox = createSlider(MiscScrolling, 'Play After', 29, nil, false)
+
+local displayAutoGrabFrame, displayAutoGrabKnob, displayAutoGrabToggle, displayAutoGrabButton = createToggle(MiscScrolling, 'Display Auto Grab', nil, false)
+
+local grabFrame, grabKnob, grabFill, grabBox = createSlider(MiscScrolling, 'Grab Speed', 30, nil, false)
+
+local displayLaggerFrame, displayLaggerKnob, displayLaggerToggle, displayLaggerButton = createToggle(MiscScrolling, 'Display Lagger', nil, false)
+
+local powerFrame, powerKnob, powerFill, powerBox = createSlider(MiscScrolling, 'Lagger Power', 20, nil, false)
+local speedOnFrame, speedOnKnob, speedOnFill, speedOnBox = createSlider(MiscScrolling, 'Speed Lagger', 50, nil, false)
+
+local displayManualLaggerFrame, displayManualLaggerKnob, displayManualLaggerToggle, displayManualLaggerButton = createToggle(MiscScrolling, 'Display Manual', nil, false)
+
+local AutoGrabBar = Instance.new('ScreenGui')
+AutoGrabBar.Name = 'AutoGrabBar'
+AutoGrabBar.ResetOnSpawn = false
+AutoGrabBar.DisplayOrder = 998
+AutoGrabBar.Parent = ScreenGui
+
+local GrabBarFrame = Instance.new('Frame')
+GrabBarFrame.Size = UDim2.new(0, 150, 0, 22)
+GrabBarFrame.Position = UDim2.new(0.5, -75, 1, -60)
+GrabBarFrame.BackgroundColor3 = Color3.new(0.0196078, 0.0196078, 0.0313726)
+GrabBarFrame.BorderSizePixel = 0
+GrabBarFrame.Parent = AutoGrabBar
+
+local GrabBarCorner = Instance.new('UICorner')
+GrabBarCorner.CornerRadius = UDim.new(0, 5)
+GrabBarCorner.Parent = GrabBarFrame
+
+local GrabBarLabel = Instance.new('TextLabel')
+GrabBarLabel.TextColor3 = Color3.new(1, 0.784314, 0)
+GrabBarLabel.Text = ""
+GrabBarLabel.Size = UDim2.new(1, 0, 0.5, 0)
+GrabBarLabel.Position = UDim2.new(0, 4, 0, 3)
+GrabBarLabel.BackgroundTransparency = 1
+GrabBarLabel.TextSize = 7
+GrabBarLabel.Font = Enum.Font.GothamBold
+GrabBarLabel.TextXAlignment = Enum.TextXAlignment.Left
+GrabBarLabel.ZIndex = 3
+GrabBarLabel.Parent = GrabBarFrame
+
+local GrabBarBox = Instance.new('TextBox')
+GrabBarBox.TextColor3 = Color3.new(1, 0.843137, 0)
+GrabBarBox.ZIndex = 3
+GrabBarBox.Position = UDim2.new(1, -20, 0, 1)
+GrabBarBox.Size = UDim2.new(0, 16, 0, 9)
+GrabBarBox.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+GrabBarBox.PlaceholderText = 'R'
+GrabBarBox.TextSize = 5
+GrabBarBox.Font = Enum.Font.GothamBold
+GrabBarBox.Parent = GrabBarFrame
+
+local GrabBarBoxCorner = Instance.new('UICorner')
+GrabBarBoxCorner.CornerRadius = UDim.new(0, 3)
+GrabBarBoxCorner.Parent = GrabBarBox
+
+local GrabBarProgress = Instance.new('Frame')
+GrabBarProgress.Size = UDim2.new(0.94, 0, 0, 3)
+GrabBarProgress.Position = UDim2.new(0.03, 0, 1, -6)
+GrabBarProgress.BackgroundColor3 = Color3.new(0.0196078, 0.0196078, 0.0313726)
+GrabBarProgress.Parent = GrabBarFrame
+
+local GrabBarProgressCorner = Instance.new('UICorner')
+GrabBarProgressCorner.CornerRadius = UDim.new(0, 1)
+GrabBarProgressCorner.Parent = GrabBarProgress
+
+local GrabBarFill = Instance.new('Frame')
+GrabBarFill.Size = UDim2.new(0, 0, 1, 0)
+GrabBarFill.BackgroundColor3 = Color3.new(1, 0.843137, 0)
+GrabBarFill.Parent = GrabBarProgress
+
+local GrabBarFillCorner = Instance.new('UICorner')
+GrabBarFillCorner.CornerRadius = UDim.new(0, 1)
+GrabBarFillCorner.Parent = GrabBarFill
+
+local AutoPlayGui = Instance.new('ScreenGui')
+AutoPlayGui.Name = 'AutoPlayGui'
+AutoPlayGui.ResetOnSpawn = false
+AutoPlayGui.DisplayOrder = 999
+AutoPlayGui.Parent = ScreenGui
+
+local AutoPlayBtn = Instance.new('TextButton')
+AutoPlayBtn.Draggable = true
+AutoPlayBtn.Text = 'AUTO PLAY'
+AutoPlayBtn.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+AutoPlayBtn.Font = Enum.Font.GothamBlack
+AutoPlayBtn.Visible = false
+AutoPlayBtn.Position = UDim2.new(0.5, -18, 0, 3)
+AutoPlayBtn.Size = UDim2.new(0, 36, 0, 12)
+AutoPlayBtn.TextSize = 5
+AutoPlayBtn.TextColor3 = Color3.new(1, 1, 1)
+AutoPlayBtn.ZIndex = 10
+AutoPlayBtn.Parent = AutoPlayGui
+
+local AutoPlayCorner = Instance.new('UICorner')
+AutoPlayCorner.CornerRadius = UDim.new(0, 3)
+AutoPlayCorner.Parent = AutoPlayBtn
+
+local AutoGrabBtnGui = Instance.new('ScreenGui')
+AutoGrabBtnGui.Name = 'AutoGrabBtnGui'
+AutoGrabBtnGui.ResetOnSpawn = false
+AutoGrabBtnGui.DisplayOrder = 999
+AutoGrabBtnGui.Parent = ScreenGui
+
+local AutoGrabBtn = Instance.new('TextButton')
+AutoGrabBtn.Text = 'AUTO GRAB'
+AutoGrabBtn.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+AutoGrabBtn.Font = Enum.Font.GothamBlack
+AutoGrabBtn.Position = UDim2.new(0.5, -18, 0.08, 3)
+AutoGrabBtn.Size = UDim2.new(0, 36, 0, 12)
+AutoGrabBtn.TextSize = 5
+AutoGrabBtn.TextColor3 = Color3.new(1, 1, 1)
+AutoGrabBtn.Parent = AutoGrabBtnGui
+
+local AutoGrabCorner = Instance.new('UICorner')
+AutoGrabCorner.CornerRadius = UDim.new(0, 3)
+AutoGrabCorner.Parent = AutoGrabBtn
+
+local LaggerBtnGui = Instance.new('ScreenGui')
+LaggerBtnGui.Name = 'LaggerBtnGui'
+LaggerBtnGui.ResetOnSpawn = false
+LaggerBtnGui.DisplayOrder = 999
+LaggerBtnGui.Parent = ScreenGui
+
+local LaggerBtn = Instance.new('TextButton')
+LaggerBtn.Text = 'LAGGER PLAY'
+LaggerBtn.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+LaggerBtn.Font = Enum.Font.GothamBlack
+LaggerBtn.Position = UDim2.new(0.5, -22, 0.16, 3)
+LaggerBtn.Size = UDim2.new(0, 44, 0, 12)
+LaggerBtn.TextSize = 5
+LaggerBtn.TextColor3 = Color3.new(1, 1, 1)
+LaggerBtn.Parent = LaggerBtnGui
+
+local LaggerCorner = Instance.new('UICorner')
+LaggerCorner.CornerRadius = UDim.new(0, 3)
+LaggerCorner.Parent = LaggerBtn
+
+local StatsGui = Instance.new('ScreenGui')
+StatsGui.Name = 'StatsGui'
+StatsGui.ResetOnSpawn = false
+StatsGui.DisplayOrder = 1000
+StatsGui.Parent = ScreenGui
+
+local FPSLabel = Instance.new('TextLabel')
+FPSLabel.Size = UDim2.new(0, 100, 0, 14)
+FPSLabel.Position = UDim2.new(0, 6, 1, -20)
+FPSLabel.BackgroundTransparency = 0.5
+FPSLabel.BackgroundColor3 = Color3.new(0, 0, 0)
+FPSLabel.TextColor3 = Color3.new(1, 1, 1)
+FPSLabel.Text = 'FPS: 0; PING: 0ms'
+FPSLabel.TextSize = 9
+FPSLabel.Font = Enum.Font.Gotham
+FPSLabel.Parent = StatsGui
+
+RunService.RenderStepped:Connect(function()
+    local ping = Stats:GetNetworkPing() * 1000
+    local fps = math.floor(1 / RunService.RenderStepped:Wait())
+    FPSLabel.Text = string.format('FPS: %d; PING: %dms', fps, math.floor(ping))
+end)
+
+local menuVisible = true
+MenuToggleBtn.MouseButton1Click:Connect(function()
+    menuVisible = not menuVisible
+    MainContainer.Visible = menuVisible
+end)
+
+local speedBoostEnabled = false
+local platformEnabled = false
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Enum.KeyCode.V then
+        speedBoostEnabled = not speedBoostEnabled
+        if speedBoostEnabled then
+            speedToggle.BackgroundColor3 = Color3.new(1, 0.843137, 0)
+            speedKnob.Position = UDim2.new(0, 18, 0.5, -6)
+        else
+            speedToggle.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+            speedKnob.Position = UDim2.new(0, 2, 0.5, -6)
+        end
+    elseif input.KeyCode == Enum.KeyCode.B then
+        local currentVal = tonumber(boostBox.Text) or 30
+        currentVal = math.min(currentVal + 5, 100)
+        boostBox.Text = tostring(currentVal)
+        boostFill.Size = UDim2.new(currentVal/100, 0, 1, 0)
+        boostKnob.Position = UDim2.new(currentVal/100, -5, 0.5, -5)
+    elseif input.KeyCode == Enum.KeyCode.Q then
+        platformEnabled = not platformEnabled
+        if platformEnabled then
+            platformToggle.BackgroundColor3 = Color3.new(1, 0.843137, 0)
+            platformKnob.Position = UDim2.new(0, 18, 0.5, -6)
+        else
+            platformToggle.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+            platformKnob.Position = UDim2.new(0, 2, 0.5, -6)
+        end
+    end
+end)
+
+local rotation = 0
+RunService.RenderStepped:Connect(function(dt)
+    rotation = rotation + dt * 10
+    if rotation > 360 then rotation = rotation - 360 end
+    if MovementPanelStroke then
+        MovementPanelGradient.Rotation = rotation
+    end
+    if MiscPanelStroke then
+        MiscPanelGradient.Rotation = rotation
+    end
+    if TitleBarStroke then
+        TitleBarGradient.Rotation = rotation
+    end
+end)   TitleBarGradient.Rotation = rotation
+    end
+end)
+
+https://discord.gg/3PyKnCV6hu
+
+— made by equinoz
