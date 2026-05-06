@@ -1,0 +1,1708 @@
+--// NOREAL OPTIMIZER FPS
+local Lighting = game:GetService("Lighting")
+local optimizerEnabled = false
+local savedLighting = {}
+local optimized = {}
+local function enableOptimizer()
+    if optimizerEnabled then return end
+    optimizerEnabled = true
+    savedLighting = {
+        GlobalShadows = Lighting.GlobalShadows,
+        FogStart = Lighting.FogStart,
+        FogEnd = Lighting.FogEnd,
+        Brightness = Lighting.Brightness,
+        EnvironmentDiffuseScale = Lighting.EnvironmentDiffuseScale,
+        EnvironmentSpecularScale = Lighting.EnvironmentSpecularScale
+    }
+    Lighting.GlobalShadows = false
+    Lighting.FogStart = 0
+    Lighting.FogEnd = 1e9
+    Lighting.Brightness = 1
+    Lighting.EnvironmentDiffuseScale = 0
+    Lighting.EnvironmentSpecularScale = 0
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            optimized[v] = {v.Material, v.Reflectance}
+            v.Material = Enum.Material.Plastic
+            v.Reflectance = 0
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            optimized[v] = v.Transparency
+            v.Transparency = 1
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") then
+            optimized[v] = v.Enabled
+            v.Enabled = false
+        end
+    end
+end
+
+local function disableOptimizer()
+    if not optimizerEnabled then return end
+    optimizerEnabled = false
+    for k, v in pairs(savedLighting) do Lighting[k] = v end
+    for obj, val in pairs(optimized) do
+        if obj and obj.Parent then
+            if typeof(val) == "table" then
+                obj.Material = val[1]; obj.Reflectance = val[2]
+            elseif typeof(val) == "boolean" then
+                obj.Enabled = val
+            else
+                obj.Transparency = val
+            end
+        end
+    end
+    optimized = {}
+end
+
+--// NOREAL XRAY BASE
+local baseOriginalTransparencies = {}
+local plotConnections = {}
+local xrayConnection
+local function applyXray(plot)
+    if baseOriginalTransparencies[plot] then return end
+    baseOriginalTransparencies[plot] = {}
+    local oldHL = plot:FindFirstChild("BaseXRayHighlight")
+    if oldHL then oldHL:Destroy() end
+    for _, part in ipairs(plot:GetDescendants()) do
+        if part:IsA("BasePart") then
+            local oldPartHL = part:FindFirstChild("BaseXRayHighlight")
+            if oldPartHL then oldPartHL:Destroy() end
+            if part.Transparency < 0.6 then
+                baseOriginalTransparencies[plot][part] = part.Transparency
+                part.Transparency = 0.68
+            end
+        end
+    end
+    plotConnections[plot] = plot.DescendantAdded:Connect(function(desc)
+        if desc:IsA("BasePart") and desc.Transparency < 0.6 then
+            baseOriginalTransparencies[plot][desc] = desc.Transparency
+            desc.Transparency = 0.68
+        end
+    end)
+end
+
+function toggleESPBases(enable)
+    local plots = workspace:FindFirstChild("Plots")
+    if not plots then return end
+    if not enable then
+        for _, conn in pairs(plotConnections) do conn:Disconnect() end
+        plotConnections = {}
+        if xrayConnection then xrayConnection:Disconnect(); xrayConnection = nil end
+        for plot, parts in pairs(baseOriginalTransparencies) do
+            for part, original in pairs(parts) do
+                if part and part.Parent then part.Transparency = original end
+            end
+        end
+        baseOriginalTransparencies = {}
+        return
+    end
+    for _, plot in ipairs(plots:GetChildren()) do applyXray(plot) end
+    xrayConnection = plots.ChildAdded:Connect(function(newPlot)
+        task.wait(0.2); applyXray(newPlot)
+    end)
+end
+
+--// NOREAL ESP PLAYERS
+local Players = game:GetService("Players")
+local lp = Players.LocalPlayer
+local espConnections = {}
+local espEnabled = false
+
+local function createESP(plr)
+    if plr == lp then return end
+    if not plr.Character then return end
+    if plr.Character:FindFirstChild("ESP_NIKE") then return end
+    local char = plr.Character
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local head = char:FindFirstChild("Head")
+    if not (hrp and head) then return end
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "NorealESP"
+    highlight.FillColor = Color3.fromRGB(156, 0, 240)  -- Neon Purple
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.25
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = char
+    local hitbox = Instance.new("BoxHandleAdornment")
+    hitbox.Name = "NorealHitbox"; hitbox.Adornee = hrp
+    hitbox.Size = Vector3.new(4, 6, 2)
+    hitbox.Color3 = Color3.fromRGB(156, 0, 240)
+    hitbox.Transparency = 0.5; hitbox.AlwaysOnTop = true
+    hitbox.ZIndex = 10; hitbox.Parent = char
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "NorealName"; billboard.Adornee = head
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true; billboard.Parent = char
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = plr.DisplayName or plr.Name
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Font = Enum.Font.GothamBold; label.TextScaled = true
+    label.TextStrokeTransparency = 0.4
+    label.TextStrokeColor3 = Color3.fromRGB(156, 0, 240)
+    label.Parent = billboard
+end
+
+local function removeESP(plr)
+    if not plr.Character then return end
+    local char = plr.Character
+    local h = char:FindFirstChild("NorealESP"); if h then h:Destroy() end
+    local hb = char:FindFirstChild("NorealHitbox"); if hb then hb:Destroy() end
+    local n = char:FindFirstChild("NorealName"); if n then n:Destroy() end
+end
+
+function toggleESPPlayers(enable)
+    espEnabled = enable
+    if enable then
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= lp then
+                if plr.Character then createESP(plr) end
+                local conn = plr.CharacterAdded:Connect(function()
+                    task.wait(0.2); if espEnabled then createESP(plr) end
+                end)
+                table.insert(espConnections, conn)
+            end
+        end
+        local pac = Players.PlayerAdded:Connect(function(plr)
+            if plr == lp then return end
+            local cac = plr.CharacterAdded:Connect(function()
+                task.wait(0.2); if espEnabled then createESP(plr) end
+            end)
+            table.insert(espConnections, cac)
+        end)
+        table.insert(espConnections, pac)
+    else
+        for _, plr in ipairs(Players:GetPlayers()) do removeESP(plr) end
+        for _, conn in ipairs(espConnections) do
+            if conn and conn.Connected then conn:Disconnect() end
+        end
+        espConnections = {}
+    end
+end
+
+--// NOREAL ANTI SENTRY
+local antiSentryConnection, antiSentryTarget
+local DETECTION_DISTANCE = 60
+local PULL_DISTANCE = -5
+
+local function getCharacter() return game.Players.LocalPlayer.Character end
+local function getWeapon()
+    local p = game.Players.LocalPlayer
+    local char = getCharacter()
+    if not char then return nil end
+    return p.Backpack:FindFirstChild("Bat") or char:FindFirstChild("Bat")
+end
+local function findSentryTarget()
+    local p = game.Players.LocalPlayer
+    local char = getCharacter()
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local rootPos = char.HumanoidRootPart.Position
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj.Name:find("Sentry") and not obj.Name:lower():find("bullet") then
+            local ownerId = obj.Name:match("Sentry_(%d+)")
+            if ownerId and tonumber(ownerId) == p.UserId then continue end
+            local part = obj:IsA("BasePart") and obj
+                or obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart"))
+            if part and (rootPos - part.Position).Magnitude <= DETECTION_DISTANCE then return obj end
+        end
+    end
+end
+local function moveSentry(obj)
+    local char = getCharacter()
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    for _, part in pairs(obj:GetDescendants()) do
+        if part:IsA("BasePart") then part.CanCollide = false end
+    end
+    local root = char.HumanoidRootPart
+    local cf = root.CFrame * CFrame.new(0, 0, PULL_DISTANCE)
+    if obj:IsA("BasePart") then obj.CFrame = cf
+    elseif obj:IsA("Model") then
+        local main2 = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+        if main2 then main2.CFrame = cf end
+    end
+end
+local function attackSentry()
+    local char = getCharacter(); if not char then return end
+    local hum2 = char:FindFirstChildOfClass("Humanoid"); if not hum2 then return end
+    local weapon = getWeapon(); if not weapon then return end
+    if weapon.Parent == game.Players.LocalPlayer.Backpack then
+        hum2:EquipTool(weapon); task.wait(0.1)
+    end
+    local handle = weapon:FindFirstChild("Handle")
+    if handle then handle.CanCollide = false end
+    pcall(function() weapon:Activate() end)
+    for _, r in pairs(weapon:GetDescendants()) do
+        if r:IsA("RemoteEvent") then pcall(function() r:FireServer() end) end
+    end
+end
+local function startAntiSentry()
+    if antiSentryConnection then return end
+    antiSentryConnection = game:GetService("RunService").Heartbeat:Connect(function()
+        if antiSentryTarget and antiSentryTarget.Parent == workspace then
+            moveSentry(antiSentryTarget); attackSentry()
+        else
+            antiSentryTarget = findSentryTarget()
+        end
+    end)
+end
+local function stopAntiSentry()
+    if antiSentryConnection then antiSentryConnection:Disconnect(); antiSentryConnection = nil end
+    antiSentryTarget = nil
+end
+
+--// NOREAL ANTI BEE & DISCO
+local player = game.Players.LocalPlayer
+local ANTI_BEE_DISCO = {
+    enabled = false, connections = {},
+    originalMoveFunction = nil, controlsProtected = false
+}
+local BAD_LIGHTING_NAMES = {
+    Blue = true, DiscoEffect = true, BeeBlur = true, ColorCorrection = true
+}
+local function antiBeeDiscoNuke(obj)
+    if not obj or not obj.Parent then return end
+    if BAD_LIGHTING_NAMES[obj.Name] then pcall(function() obj:Destroy() end) end
+end
+local function antiBeeDiscoDisconnectAll()
+    for _, conn in ipairs(ANTI_BEE_DISCO.connections) do
+        if typeof(conn) == "RBXScriptConnection" then conn:Disconnect() end
+    end
+    ANTI_BEE_DISCO.connections = {}
+end
+local function protectControls()
+    if ANTI_BEE_DISCO.controlsProtected then return end
+    pcall(function()
+        local PS = player.PlayerScripts
+        local PM = PS:FindFirstChild("PlayerModule"); if not PM then return end
+        local Controls = require(PM):GetControls(); if not Controls then return end
+        if not ANTI_BEE_DISCO.originalMoveFunction then
+            ANTI_BEE_DISCO.originalMoveFunction = Controls.moveFunction
+        end
+        local function protectedMoveFunction(self, mv, rc)
+            if ANTI_BEE_DISCO.originalMoveFunction then
+                ANTI_BEE_DISCO.originalMoveFunction(self, mv, rc)
+            end
+        end
+        local conn = game:GetService("RunService").Heartbeat:Connect(function()
+            if not ANTI_BEE_DISCO.enabled then return end
+            if Controls.moveFunction ~= protectedMoveFunction then
+                Controls.moveFunction = protectedMoveFunction
+            end
+        end)
+        table.insert(ANTI_BEE_DISCO.connections, conn)
+        Controls.moveFunction = protectedMoveFunction
+        ANTI_BEE_DISCO.controlsProtected = true
+    end)
+end
+local function restoreControls()
+    if not ANTI_BEE_DISCO.controlsProtected then return end
+    pcall(function()
+        local PS = player.PlayerScripts
+        local PM = PS:FindFirstChild("PlayerModule"); if not PM then return end
+        local Controls = require(PM):GetControls()
+        if not Controls or not ANTI_BEE_DISCO.originalMoveFunction then return end
+        Controls.moveFunction = ANTI_BEE_DISCO.originalMoveFunction
+        ANTI_BEE_DISCO.controlsProtected = false
+    end)
+end
+local function blockBuzzingSound()
+    pcall(function()
+        local beeScript = player.PlayerScripts:FindFirstChild("Bee", true)
+        if beeScript then
+            local buzzing = beeScript:FindFirstChild("Buzzing")
+            if buzzing and buzzing:IsA("Sound") then buzzing:Stop(); buzzing.Volume = 0 end
+        end
+    end)
+end
+local function enableAntiBee()
+    if ANTI_BEE_DISCO.enabled then return end
+    ANTI_BEE_DISCO.enabled = true
+    for _, inst in ipairs(Lighting:GetDescendants()) do antiBeeDiscoNuke(inst) end
+    local addedConn = Lighting.DescendantAdded:Connect(function(obj)
+        if ANTI_BEE_DISCO.enabled then antiBeeDiscoNuke(obj) end
+    end)
+    table.insert(ANTI_BEE_DISCO.connections, addedConn)
+    protectControls()
+    local soundConn = game:GetService("RunService").Heartbeat:Connect(function()
+        if ANTI_BEE_DISCO.enabled then blockBuzzingSound() end
+    end)
+    table.insert(ANTI_BEE_DISCO.connections, soundConn)
+end
+local function disableAntiBee()
+    if not ANTI_BEE_DISCO.enabled then return end
+    ANTI_BEE_DISCO.enabled = false
+    restoreControls(); antiBeeDiscoDisconnectAll()
+end
+
+--// NOREAL ANTI FPS DEVOURER
+local ANTI_FPS_DEVOURER = { enabled = false, connections = {}, hiddenAccessories = {} }
+local function removeAccessory(accessory)
+    if not ANTI_FPS_DEVOURER.hiddenAccessories[accessory] then
+        ANTI_FPS_DEVOURER.hiddenAccessories[accessory] = accessory.Parent
+        accessory.Parent = nil
+    end
+end
+function enableAntiFPSDevourer()
+    if ANTI_FPS_DEVOURER.enabled then return end
+    ANTI_FPS_DEVOURER.enabled = true
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Accessory") then removeAccessory(obj) end
+    end
+    local conn = workspace.DescendantAdded:Connect(function(obj)
+        if ANTI_FPS_DEVOURER.enabled and obj:IsA("Accessory") then removeAccessory(obj) end
+    end)
+    table.insert(ANTI_FPS_DEVOURER.connections, conn)
+end
+function disableAntiFPSDevourer()
+    if not ANTI_FPS_DEVOURER.enabled then return end
+    ANTI_FPS_DEVOURER.enabled = false
+    for _, conn in ipairs(ANTI_FPS_DEVOURER.connections) do
+        if typeof(conn) == "RBXScriptConnection" then conn:Disconnect() end
+    end
+    ANTI_FPS_DEVOURER.connections = {}
+    for accessory, originalParent in pairs(ANTI_FPS_DEVOURER.hiddenAccessories) do
+        if accessory then accessory.Parent = originalParent end
+    end
+    ANTI_FPS_DEVOURER.hiddenAccessories = {}
+end
+
+--// SERVICES
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Stats = game:GetService("Stats")
+
+-- NOREAL THEME COLORS (NEON PURPLE)
+local NK = {
+    BLACK      = Color3.fromRGB(15, 15, 15),
+    DARK       = Color3.fromRGB(22, 22, 22),
+    PANEL      = Color3.fromRGB(28, 28, 28),
+    CARD       = Color3.fromRGB(35, 35, 35),
+    PURPLE     = Color3.fromRGB(156, 0, 240),  -- Neon Purple
+    PURPLE_DARK= Color3.fromRGB(106, 0, 180),
+    WHITE      = Color3.fromRGB(255, 255, 255),
+    GREY       = Color3.fromRGB(160, 160, 160),
+    GREY_DARK  = Color3.fromRGB(80, 80, 80),
+    GREEN      = Color3.fromRGB(50, 205, 80),
+}
+
+local character, hrp, hum
+
+--// NOREAL MELEE AIMBOT
+local MELEE_RANGE = 45
+local MELEE_ONLY_ENEMIES = true
+local meleeEnabled = false
+local meleeConnection, meleeAlignOrientation, meleeAttachment
+
+local function isValidMeleeTarget(humanoid, rootPart)
+    if not (humanoid and rootPart) then return false end
+    if humanoid.Health <= 0 then return false end
+    if MELEE_ONLY_ENEMIES then
+        local targetPlayer = Players:GetPlayerFromCharacter(humanoid.Parent)
+        if not targetPlayer or targetPlayer == player then return false end
+    end
+    return true
+end
+local function getClosestMeleeTarget(hrpRef)
+    local closest, minDist = nil, MELEE_RANGE
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p == player then continue end
+        local char2 = p.Character; if not char2 then continue end
+        local targetHrp = char2:FindFirstChild("HumanoidRootPart")
+        local hum2 = char2:FindFirstChildOfClass("Humanoid")
+        if isValidMeleeTarget(hum2, targetHrp) then
+            local dist = (targetHrp.Position - hrpRef.Position).Magnitude
+            if dist < minDist then minDist = dist; closest = targetHrp end
+        end
+    end
+    return closest
+end
+local function createMeleeAimbot(char)
+    local hrpRef = char:WaitForChild("HumanoidRootPart", 8)
+    local humanoidRef = char:WaitForChild("Humanoid", 8)
+    if not (hrpRef and humanoidRef) then return end
+    if meleeAlignOrientation then pcall(function() meleeAlignOrientation:Destroy() end) end
+    if meleeAttachment then pcall(function() meleeAttachment:Destroy() end) end
+    meleeAttachment = Instance.new("Attachment"); meleeAttachment.Parent = hrpRef
+    meleeAlignOrientation = Instance.new("AlignOrientation")
+    meleeAlignOrientation.Attachment0 = meleeAttachment
+    meleeAlignOrientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
+    meleeAlignOrientation.RigidityEnabled = true
+    meleeAlignOrientation.MaxTorque = 100000
+    meleeAlignOrientation.Responsiveness = 200
+    meleeAlignOrientation.Parent = hrpRef
+    if meleeConnection then meleeConnection:Disconnect() end
+    meleeConnection = RunService.RenderStepped:Connect(function()
+        if not char.Parent or not meleeEnabled then return end
+        local target = getClosestMeleeTarget(hrpRef)
+        if target then
+            humanoidRef.AutoRotate = false
+            meleeAlignOrientation.Enabled = true
+            local targetPos = Vector3.new(target.Position.X, hrpRef.Position.Y, target.Position.Z)
+            meleeAlignOrientation.CFrame = CFrame.lookAt(hrpRef.Position, targetPos)
+        else
+            meleeAlignOrientation.Enabled = false
+            humanoidRef.AutoRotate = true
+        end
+    end)
+end
+local function disableMeleeAimbot()
+    meleeEnabled = false
+    if meleeConnection then meleeConnection:Disconnect(); meleeConnection = nil end
+    if meleeAlignOrientation then
+        meleeAlignOrientation.Enabled = false
+        pcall(function() meleeAlignOrientation:Destroy() end)
+        meleeAlignOrientation = nil
+    end
+    if character and character:FindFirstChild("Humanoid") then
+        character.Humanoid.AutoRotate = true
+    end
+    if meleeAttachment then pcall(function() meleeAttachment:Destroy() end); meleeAttachment = nil end
+end
+
+--// NOREAL ANTI RAGDOLL
+local antiRagdollMode = nil
+local ragdollConnections = {}
+local cachedCharData = {}
+local function cacheCharacterData()
+    local char = player.Character; if not char then return false end
+    local hum2 = char:FindFirstChildOfClass("Humanoid")
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not hum2 or not root then return false end
+    cachedCharData = {
+        character = char, humanoid = hum2, root = root,
+        originalWalkSpeed = hum2.WalkSpeed,
+        originalJumpPower = hum2.JumpPower,
+        isFrozen = false
+    }
+    return true
+end
+local function disconnectAllRagdoll()
+    for _, conn in ipairs(ragdollConnections) do
+        if typeof(conn) == "RBXScriptConnection" then pcall(function() conn:Disconnect() end) end
+    end
+    ragdollConnections = {}
+end
+local function isRagdolled()
+    if not cachedCharData.humanoid then return false end
+    local state = cachedCharData.humanoid:GetState()
+    if state == Enum.HumanoidStateType.Physics
+        or state == Enum.HumanoidStateType.Ragdoll
+        or state == Enum.HumanoidStateType.FallingDown then return true end
+    local endTime = player:GetAttribute("RagdollEndTime")
+    if endTime and (endTime - workspace:GetServerTimeNow()) > 0 then return true end
+    return false
+end
+local function removeRagdollConstraints()
+    if not cachedCharData.character then return end
+    for _, d in ipairs(cachedCharData.character:GetDescendants()) do
+        if d:IsA("BallSocketConstraint") or
+            (d:IsA("Attachment") and d.Name:find("RagdollAttachment")) then
+            pcall(function() d:Destroy() end)
+        end
+    end
+end
+local function forceExitRagdoll()
+    if not cachedCharData.humanoid or not cachedCharData.root then return end
+    pcall(function() player:SetAttribute("RagdollEndTime", workspace:GetServerTimeNow()) end)
+    if cachedCharData.humanoid.Health > 0 then
+        cachedCharData.humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    end
+    cachedCharData.root.Anchored = false
+    cachedCharData.root.AssemblyLinearVelocity = Vector3.zero
+    cachedCharData.root.AssemblyAngularVelocity = Vector3.zero
+end
+local function antiRagdollLoop()
+    while antiRagdollMode do
+        task.wait()
+        if isRagdolled() then removeRagdollConstraints(); forceExitRagdoll() end
+        local cam = workspace.CurrentCamera
+        if cam and cachedCharData.humanoid then
+            if cam.CameraSubject ~= cachedCharData.humanoid then
+                cam.CameraSubject = cachedCharData.humanoid
+            end
+        end
+    end
+end
+function toggleAntiRagdoll(enable)
+    if enable then
+        disconnectAllRagdoll()
+        if not cacheCharacterData() then return end
+        antiRagdollMode = "v1"
+        local charConn = player.CharacterAdded:Connect(function()
+            task.wait(0.5); if antiRagdollMode then cacheCharacterData() end
+        end)
+        table.insert(ragdollConnections, charConn)
+        task.spawn(antiRagdollLoop)
+    else
+        antiRagdollMode = nil
+        disconnectAllRagdoll()
+        cachedCharData = {}
+    end
+end
+
+--// NOREAL SETUP CHARACTER
+local function setupCharacter(char)
+    character = char
+    hrp = character:WaitForChild("HumanoidRootPart")
+    hum = character:WaitForChild("Humanoid")
+    if meleeEnabled then
+        task.spawn(function()
+            task.wait(0.3); createMeleeAimbot(char)
+        end)
+    end
+end
+if player.Character then setupCharacter(player.Character) end
+player.CharacterAdded:Connect(setupCharacter)
+
+--// NOREAL AUTO DUEL SYSTEM
+local DuelState = {
+    Moving = false,
+    Waypoints = {},
+    CurrentWaypoint = 1,
+    Connection = nil,
+}
+local function getHRP()
+    local char = lp.Character
+    return char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso"))
+end
+local function stopDuel()
+    if DuelState.Connection then DuelState.Connection:Disconnect(); DuelState.Connection = nil end
+    DuelState.Moving = false
+    DuelState.CurrentWaypoint = 1
+    DuelState.Waypoints = {}
+end
+local function startDuel()
+    local root = getHRP(); if not root then return end
+    DuelState.Moving = true
+    if (root.Position - Vector3.new(-475, -7, 96)).Magnitude
+        > (root.Position - Vector3.new(-474, -7, 23)).Magnitude then
+        DuelState.Waypoints = {
+            { position = Vector3.new(-475, -7, 96),  speed = 60.5 },
+            { position = Vector3.new(-483, -5, 95),  speed = 60.5 },
+            { position = Vector3.new(-487, -5, 95),  speed = 60.5 },
+            { position = Vector3.new(-492, -5, 95),  speed = 30   },
+            { position = Vector3.new(-473, -7, 95),  speed = 30   },
+            { position = Vector3.new(-473, -7, 11),  speed = 30   },
+        }
+    else
+        DuelState.Waypoints = {
+            { position = Vector3.new(-474, -7, 23),  speed = 60.5 },
+            { position = Vector3.new(-484, -5, 24),  speed = 60.5 },
+            { position = Vector3.new(-488, -5, 24),  speed = 60.5 },
+            { position = Vector3.new(-493, -5, 25),  speed = 30   },
+            { position = Vector3.new(-473, -7, 25),  speed = 30   },
+            { position = Vector3.new(-474, -7, 112), speed = 30   },
+        }
+    end
+    DuelState.CurrentWaypoint = 1
+    DuelState.Connection = RunService.Stepped:Connect(function()
+        if not DuelState.Moving then return end
+        local hrpRef = getHRP(); if not hrpRef then stopDuel(); return end
+        local wp = DuelState.Waypoints[DuelState.CurrentWaypoint]; if not wp then stopDuel(); return end
+        local dist = (hrpRef.Position - wp.position).Magnitude
+        if dist < 6 then
+            if DuelState.CurrentWaypoint >= #DuelState.Waypoints then
+                stopDuel(); return
+            end
+            DuelState.CurrentWaypoint += 1
+        else
+            local dir = (wp.position - hrpRef.Position).Unit
+            hrpRef.Velocity = Vector3.new(dir.X * wp.speed, hrpRef.Velocity.Y, dir.Z * wp.speed)
+        end
+    end)
+end
+lp.CharacterAdded:Connect(function()
+    if DuelState.Moving then task.wait(0.3); stopDuel() end
+end)
+
+--// NOREAL SMART AUTO STEAL
+local autoStealEnabled = false
+local stealLoopThread = nil
+local STEAL_GRAB_RADIUS = 50
+
+local function isMyBase(plotName)
+    local plots = workspace:FindFirstChild("Plots")
+    if not plots then return false end
+    local plot = plots:FindFirstChild(plotName)
+    if not plot then return false end
+    local sign = plot:FindFirstChild("PlotSign")
+    local yourBase = sign and sign:FindFirstChild("YourBase")
+    return yourBase and yourBase.Enabled == true
+end
+local function scanStealTargets()
+    local results = {}
+    local plots = workspace:FindFirstChild("Plots")
+    if not plots then return results end
+    for _, plot in ipairs(plots:GetChildren()) do
+        if plot:IsA("Model") and not isMyBase(plot.Name) then
+            local podiums = plot:FindFirstChild("AnimalPodiums")
+            if podiums then
+                for _, podium in ipairs(podiums:GetChildren()) do
+                    if podium:IsA("Model") then
+                        local base = podium:FindFirstChild("Base")
+                        if base then
+                            local spawnAtt = base:FindFirstChild("Spawn")
+                            local att = spawnAtt and spawnAtt:FindFirstChild("PromptAttachment")
+                            local prompt = att and att:FindFirstChildOfClass("ProximityPrompt")
+                            if prompt and prompt.Enabled then
+                                table.insert(results, {
+                                    prompt = prompt,
+                                    position = base.Position,
+                                    plot = plot.Name
+                                })
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return results
+end
+local function snapSteal(target)
+    local char = lp.Character; if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end
+    local savedCFrame = root.CFrame
+    local podiumPos = target.position
+    local offsetDir = (root.Position - podiumPos)
+    offsetDir = Vector3.new(offsetDir.X, 0, offsetDir.Z)
+    if offsetDir.Magnitude < 0.1 then offsetDir = Vector3.new(1, 0, 0) end
+    offsetDir = offsetDir.Unit
+    local stealPos = podiumPos + offsetDir * 2.5
+    root.CFrame = CFrame.new(Vector3.new(stealPos.X, podiumPos.Y + 3, stealPos.Z))
+    task.wait(0.05)
+    pcall(function() fireproximityprompt(target.prompt) end)
+    task.wait(0.05)
+    pcall(function() fireproximityprompt(target.prompt) end)
+    root.CFrame = savedCFrame
+end
+local function startSmartSteal()
+    if stealLoopThread then return end
+    stealLoopThread = task.spawn(function()
+        while autoStealEnabled do
+            local char = lp.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if root then
+                local targets = scanStealTargets()
+                local best, bestDist = nil, STEAL_GRAB_RADIUS
+                for _, t in ipairs(targets) do
+                    local d = (root.Position - t.position).Magnitude
+                    if d < bestDist then bestDist = d; best = t end
+                end
+                if best then snapSteal(best) end
+            end
+            task.wait(0.3)
+        end
+        stealLoopThread = nil
+    end)
+end
+local function stopSmartSteal()
+    autoStealEnabled = false
+    if stealLoopThread then task.cancel(stealLoopThread); stealLoopThread = nil end
+end
+
+--// NOREAL BOOSTER CUSTOMIZER
+local gui2 = Instance.new("ScreenGui")
+gui2.Name = "NorealBoosterCustomizer"
+gui2.ResetOnSpawn = false
+gui2.Enabled = false
+gui2.Parent = player:WaitForChild("PlayerGui")
+
+local main2 = Instance.new("Frame")
+main2.Size = UDim2.new(0, 210, 0, 185)
+main2.Position = UDim2.new(0.5, -105, 0.15, 0)
+main2.BackgroundColor3 = NK.DARK
+main2.BorderSizePixel = 0
+main2.Parent = gui2
+Instance.new("UICorner", main2).CornerRadius = UDim.new(0, 12)
+local strokeB = Instance.new("UIStroke", main2)
+strokeB.Color = NK.PURPLE; strokeB.Thickness = 2
+
+local dragHandleB = Instance.new("Frame")
+dragHandleB.Size = UDim2.new(1, 0, 0, 30)
+dragHandleB.BackgroundTransparency = 1
+dragHandleB.Parent = main2
+
+local draggingB, dragInputB, dragStartB, startPosB = false, nil, Vector2.new(), Vector2.new()
+local function updateB(input)
+    local delta = input.Position - dragStartB
+    main2.Position = UDim2.new(0, startPosB.X + delta.X, 0, startPosB.Y + delta.Y)
+end
+dragHandleB.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        draggingB = true; dragInputB = input
+        dragStartB = input.Position
+        startPosB = Vector2.new(main2.AbsolutePosition.X, main2.AbsolutePosition.Y)
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                draggingB = false; dragInputB = nil
+            end
+        end)
+    end
+end)
+dragHandleB.InputChanged:Connect(function(input)
+    if input == dragInputB and draggingB then updateB(input) end
+end)
+
+local nikeTagB = Instance.new("TextLabel")
+nikeTagB.Size = UDim2.new(1, 0, 0, 30)
+nikeTagB.Position = UDim2.new(0, 12, 0, 0)
+nikeTagB.BackgroundTransparency = 1
+nikeTagB.Text = "✓  NOREAL SPEED"
+nikeTagB.Font = Enum.Font.GothamBold
+nikeTagB.TextSize = 13
+nikeTagB.TextColor3 = NK.PURPLE
+nikeTagB.TextXAlignment = Enum.TextXAlignment.Left
+nikeTagB.Parent = main2
+
+local activateB = Instance.new("TextButton")
+activateB.Size = UDim2.new(1, -20, 0, 32)
+activateB.Position = UDim2.new(0, 10, 0, 34)
+activateB.BackgroundColor3 = NK.CARD
+activateB.TextColor3 = NK.WHITE
+activateB.Text = "OFF"
+activateB.Font = Enum.Font.GothamBold
+activateB.TextSize = 14
+activateB.BorderSizePixel = 0
+activateB.Parent = main2
+Instance.new("UICorner", activateB).CornerRadius = UDim.new(0, 8)
+Instance.new("UIStroke", activateB).Color = NK.PURPLE
+
+local function createRowNike(text, posY, default)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.55, 0, 0, 25)
+    label.Position = UDim2.new(0, 12, 0, posY)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 12
+    label.TextColor3 = NK.GREY
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = main2
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(0.38, 0, 0, 25)
+    box.Position = UDim2.new(0.57, 5, 0, posY)
+    box.BackgroundColor3 = NK.CARD
+    box.TextColor3 = NK.WHITE
+    box.Text = tostring(default)
+    box.Font = Enum.Font.GothamBold
+    box.TextSize = 12
+    box.ClearTextOnFocus = false
+    box.BorderSizePixel = 0
+    box.Parent = main2
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", box).Color = NK.PURPLE
+    return box
+end
+local speedBox = createRowNike("Speed", 76, 53)
+local stealBox = createRowNike("Steal Spd", 108, 29)
+local jumpBox  = createRowNike("Jump",      140, 60)
+
+local activeBooster = false
+local speedConnection
+local infiniteJumpEnabled = false
+local autoBatActive = false
+local autoBatLoop = nil
+local savedAnimate = nil
+
+local function applyInput(box, min, max, default)
+    box.FocusLost:Connect(function()
+        local num = math.clamp(tonumber(box.Text:gsub("%D", "")) or default, min, max)
+        box.Text = tostring(num)
+    end)
+end
+applyInput(speedBox, 15, 200, 53)
+applyInput(stealBox, 15, 200, 29)
+applyInput(jumpBox,  50, 200, 60)
+
+activateB.MouseButton1Click:Connect(function()
+    activeBooster = not activeBooster
+    if activeBooster then
+        activateB.Text = "ON"
+        activateB.BackgroundColor3 = NK.PURPLE
+        speedConnection = RunService.Heartbeat:Connect(function()
+            if character and hrp and hum then
+                local sNoSteal = tonumber(speedBox.Text) or 53
+                local sSteal   = tonumber(stealBox.Text) or 29
+                local moveDir  = hum.MoveDirection
+                if moveDir.Magnitude > 0 then
+                    local spd = (hum.WalkSpeed < 25) and sSteal or sNoSteal
+                    hrp.AssemblyLinearVelocity = Vector3.new(
+                        moveDir.X * spd, hrp.AssemblyLinearVelocity.Y, moveDir.Z * spd)
+                end
+            end
+        end)
+    else
+        activateB.Text = "OFF"
+        activateB.BackgroundColor3 = NK.CARD
+        if speedConnection then speedConnection:Disconnect(); speedConnection = nil end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if not character or not hum or not hrp then return end
+    local state = hum:GetState()
+    if activeBooster then
+        if state == Enum.HumanoidStateType.Running or state == Enum.HumanoidStateType.Landed then
+            hrp.AssemblyLinearVelocity = Vector3.new(
+                hrp.AssemblyLinearVelocity.X,
+                tonumber(jumpBox.Text) or 70,
+                hrp.AssemblyLinearVelocity.Z)
+        end
+    end
+    if infiniteJumpEnabled then
+        hrp.AssemblyLinearVelocity = Vector3.new(
+            hrp.AssemblyLinearVelocity.X, 50, hrp.AssemblyLinearVelocity.Z)
+    end
+end)
+
+--// NOREAL STEAL RADIUS VISUAL
+local stealSquarePart = nil
+local grabRadius = 50
+local function hideSquare()
+    if stealSquarePart then stealSquarePart:Destroy(); stealSquarePart = nil end
+end
+local function createOrUpdateSquare(radius)
+    if not stealSquarePart then
+        stealSquarePart = Instance.new("Part")
+        stealSquarePart.Name = "NorealStealCircle"
+        stealSquarePart.Anchored = true; stealSquarePart.CanCollide = false
+        stealSquarePart.Transparency = 0.7; stealSquarePart.Material = Enum.Material.Neon
+        stealSquarePart.Color = NK.PURPLE
+        stealSquarePart.Shape = Enum.PartType.Cylinder
+        stealSquarePart.Size = Vector3.new(0.05, radius * 2, radius * 2)
+        stealSquarePart.Parent = workspace
+    else
+        stealSquarePart.Size = Vector3.new(0.05, radius * 2, radius * 2)
+    end
+end
+local function updateSquarePosition()
+    if stealSquarePart and lp.Character then
+        local root = lp.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            stealSquarePart.CFrame = CFrame.new(root.Position + Vector3.new(0, -2.5, 0))
+                * CFrame.Angles(0, 0, math.rad(90))
+        end
+    end
+end
+
+--// ====================================================
+--// MAIN SCREEN GUI - NOREAL DUELS
+--// ====================================================
+local sg = Instance.new("ScreenGui")
+sg.Name = "Noreal Duels"
+sg.ResetOnSpawn = false
+sg.Parent = lp:WaitForChild("PlayerGui")
+
+-- Progress bar (Neon Purple style)
+local progressBarBg = Instance.new("Frame")
+progressBarBg.Size = UDim2.new(0, 240, 0, 10)
+progressBarBg.Position = UDim2.new(0.5, -120, 0, 52)
+progressBarBg.BackgroundColor3 = NK.CARD
+progressBarBg.BackgroundTransparency = 0.1
+progressBarBg.Visible = false; progressBarBg.Parent = sg
+Instance.new("UICorner", progressBarBg).CornerRadius = UDim.new(1, 0)
+
+local progressFill = Instance.new("Frame")
+progressFill.Size = UDim2.new(0, 0, 1, 0)
+progressFill.BackgroundColor3 = NK.PURPLE
+progressFill.BorderSizePixel = 0
+progressFill.Parent = progressBarBg
+Instance.new("UICorner", progressFill).CornerRadius = UDim.new(1, 0)
+
+local percentLabel = Instance.new("TextLabel")
+percentLabel.Size = UDim2.new(1, 0, 1, 0)
+percentLabel.BackgroundTransparency = 1
+percentLabel.Font = Enum.Font.GothamBold; percentLabel.TextSize = 11
+percentLabel.TextColor3 = NK.WHITE
+percentLabel.Text = "0%"; percentLabel.Parent = progressBarBg
+
+-- Top bar
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(0, 260, 0, 34)
+topBar.Position = UDim2.new(0.5, -130, 0, 12)
+topBar.BackgroundColor3 = NK.DARK
+topBar.BackgroundTransparency = 0; topBar.BorderSizePixel = 0
+topBar.Parent = sg
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 10)
+local topStroke = Instance.new("UIStroke", topBar)
+topStroke.Color = NK.PURPLE; topStroke.Thickness = 1.5
+
+local topLeft = Instance.new("TextLabel")
+topLeft.Size = UDim2.new(0, 34, 1, 0)
+topLeft.Position = UDim2.new(0, 0, 0, 0)
+topLeft.BackgroundTransparency = 1
+topLeft.Text = "✓"
+topLeft.Font = Enum.Font.GothamBold
+topLeft.TextSize = 18
+topLeft.TextColor3 = NK.PURPLE
+topLeft.Parent = topBar
+
+local topLabel = Instance.new("TextLabel")
+topLabel.Size = UDim2.new(1, -40, 1, 0)
+topLabel.Position = UDim2.new(0, 36, 0, 0)
+topLabel.BackgroundTransparency = 1
+topLabel.Font = Enum.Font.GothamBold; topLabel.TextSize = 13
+topLabel.TextColor3 = NK.WHITE
+topLabel.TextXAlignment = Enum.TextXAlignment.Left
+topLabel.Parent = topBar
+
+local fps, framesCount, last = 60, 0, tick()
+RunService.RenderStepped:Connect(function()
+    framesCount += 1
+    if tick() - last >= 1 then fps = framesCount; framesCount = 0; last = tick() end
+    local ping = 0
+    local network = Stats:FindFirstChild("Network")
+    if network and network:FindFirstChild("ServerStatsItem") then
+        local dp = network.ServerStatsItem:FindFirstChild("Data Ping")
+        if dp then ping = math.floor(dp:GetValue()) end
+    end
+    topLabel.Text = "Noreal Duels  |  " .. fps .. " FPS  |  " .. ping .. " ms"
+end)
+
+-- Toggle button (Neon Purple pill)
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 52, 0, 52)
+toggleBtn.Position = UDim2.new(1, -68, 0, 56)
+toggleBtn.BackgroundColor3 = NK.PURPLE
+toggleBtn.Text = "✓"
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 28
+toggleBtn.TextColor3 = NK.WHITE
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Parent = sg
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
+local toggleStroke = Instance.new("UIStroke", toggleBtn)
+toggleStroke.Color = NK.PURPLE_DARK; toggleStroke.Thickness = 2.5
+
+-- Hub panel
+local HUB_WIDTH  = 270
+local HUB_HEIGHT = 340
+local hub = Instance.new("Frame")
+hub.Size = UDim2.new(0, HUB_WIDTH, 0, HUB_HEIGHT)
+hub.Position = UDim2.new(0, -(HUB_WIDTH + 20), 0.5, -HUB_HEIGHT / 2)
+hub.BackgroundColor3 = NK.DARK
+hub.BackgroundTransparency = 0
+hub.BorderSizePixel = 0
+hub.Parent = sg
+Instance.new("UICorner", hub).CornerRadius = UDim.new(0, 16)
+Instance.new("UIStroke", hub).Color = NK.PURPLE
+
+-- Hub header bar
+local hubHeader = Instance.new("Frame")
+hubHeader.Size = UDim2.new(1, 0, 0, 54)
+hubHeader.BackgroundColor3 = NK.BLACK
+hubHeader.BorderSizePixel = 0
+hubHeader.Parent = hub
+local hubHeaderCorner = Instance.new("UICorner", hubHeader)
+hubHeaderCorner.CornerRadius = UDim.new(0, 16)
+
+local headerAccent = Instance.new("Frame")
+headerAccent.Size = UDim2.new(1, 0, 0, 3)
+headerAccent.Position = UDim2.new(0, 0, 1, -3)
+headerAccent.BackgroundColor3 = NK.PURPLE
+headerAccent.BorderSizePixel = 0
+headerAccent.Parent = hubHeader
+
+local norealCheck = Instance.new("TextLabel")
+norealCheck.Size = UDim2.new(0, 38, 0, 38)
+norealCheck.Position = UDim2.new(0, 10, 0.5, -19)
+norealCheck.BackgroundTransparency = 1
+norealCheck.Text = "✓"
+norealCheck.Font = Enum.Font.GothamBold
+norealCheck.TextSize = 26
+norealCheck.TextColor3 = NK.PURPLE
+norealCheck.Parent = hubHeader
+
+local hubTitle = Instance.new("TextLabel")
+hubTitle.Size = UDim2.new(0, 160, 0, 28)
+hubTitle.Position = UDim2.new(0, 52, 0, 6)
+hubTitle.BackgroundTransparency = 1
+hubTitle.Font = Enum.Font.GothamBold
+hubTitle.TextSize = 17
+hubTitle.TextXAlignment = Enum.TextXAlignment.Left
+hubTitle.TextColor3 = NK.WHITE
+hubTitle.Text = "NOREAL DUELS"
+hubTitle.Parent = hubHeader
+
+local hubTag = Instance.new("TextLabel")
+hubTag.Size = UDim2.new(0, 160, 0, 16)
+hubTag.Position = UDim2.new(0, 52, 0, 32)
+hubTag.BackgroundTransparency = 1
+hubTag.Font = Enum.Font.Gotham
+hubTag.TextSize = 10
+hubTag.TextXAlignment = Enum.TextXAlignment.Left
+hubTag.TextColor3 = NK.PURPLE
+hubTag.Text = "JUST WIN IT."
+hubTag.Parent = hubHeader
+
+local discordLabel = Instance.new("TextButton")
+discordLabel.Size = UDim2.new(0, 60, 0, 22)
+discordLabel.Position = UDim2.new(1, -68, 0.5, -11)
+discordLabel.BackgroundColor3 = NK.CARD
+discordLabel.TextColor3 = NK.GREY
+discordLabel.TextSize = 9
+discordLabel.Font = Enum.Font.GothamBold
+discordLabel.Text = "DISCORD"
+discordLabel.BorderSizePixel = 0
+discordLabel.Parent = hubHeader
+Instance.new("UICorner", discordLabel).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", discordLabel).Color = NK.PURPLE
+discordLabel.MouseButton1Click:Connect(function()
+    setclipboard("discord.gg/w24cF33xTn")
+    discordLabel.Text = "COPIED!"
+    discordLabel.TextColor3 = NK.GREEN
+    task.wait(1.5)
+    discordLabel.Text = "DISCORD"
+    discordLabel.TextColor3 = NK.GREY
+end)
+
+-- Section tab bar
+local sections = { "Combat", "Player", "Visual", "Settings" }
+local sectionButtons = {}
+local frames = {}
+local tabBarY = 58
+local tabH = 30
+local tabPad = 8
+local tabW = (HUB_WIDTH - tabPad * (#sections + 1)) / #sections
+
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, 0, 0, tabH + 10)
+tabBar.Position = UDim2.new(0, 0, 0, tabBarY)
+tabBar.BackgroundTransparency = 1
+tabBar.Parent = hub
+
+for i, name in ipairs(sections) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, tabW, 0, tabH)
+    btn.Position = UDim2.new(0, tabPad + (i - 1) * (tabW + tabPad), 0.5, -tabH / 2)
+    btn.BackgroundColor3 = NK.PANEL
+    btn.BorderSizePixel = 0
+    btn.Text = name
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.TextColor3 = NK.GREY
+    btn.Parent = tabBar
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
+    table.insert(sectionButtons, btn)
+
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1, -16, 1, -(tabBarY + tabH + 18))
+    scroll.Position = UDim2.new(0, 8, 0, tabBarY + tabH + 10)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scroll.ScrollBarThickness = 3
+    scroll.ScrollBarImageColor3 = NK.PURPLE
+    scroll.BackgroundTransparency = 1
+    scroll.Visible = false
+    scroll.Name = name .. "Frame"
+    scroll.Parent = hub
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 7)
+    layout.Parent = scroll
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+    end)
+    frames[name] = scroll
+
+    btn.MouseButton1Click:Connect(function()
+        for _, f in pairs(frames) do f.Visible = false end
+        frames[name].Visible = true
+        for _, b in pairs(sectionButtons) do
+            b.BackgroundColor3 = NK.PANEL
+            b.TextColor3 = NK.GREY
+        end
+        btn.BackgroundColor3 = NK.PURPLE
+        btn.TextColor3 = NK.WHITE
+    end)
+end
+
+-- =============================================
+-- NOREAL AUTO DUEL BUTTON
+-- =============================================
+local duelBtnContainer = Instance.new("Frame")
+duelBtnContainer.Size = UDim2.new(1, 0, 0, 52)
+duelBtnContainer.BackgroundTransparency = 1
+duelBtnContainer.Parent = frames["Combat"]
+
+local duelActionBtn = Instance.new("TextButton")
+duelActionBtn.Size = UDim2.new(1, 0, 1, 0)
+duelActionBtn.BackgroundColor3 = NK.PURPLE
+duelActionBtn.Text = "⚔  NOREAL DUEL  —  OFF"
+duelActionBtn.Font = Enum.Font.GothamBold
+duelActionBtn.TextSize = 14
+duelActionBtn.TextColor3 = NK.WHITE
+duelActionBtn.BorderSizePixel = 0
+duelActionBtn.Parent = duelBtnContainer
+Instance.new("UICorner", duelActionBtn).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", duelActionBtn).Color = NK.PURPLE_DARK
+
+local duelDot = Instance.new("Frame")
+duelDot.Size = UDim2.new(0, 10, 0, 10)
+duelDot.Position = UDim2.new(0, 14, 0.5, -5)
+duelDot.BackgroundColor3 = NK.GREY_DARK
+duelDot.BorderSizePixel = 0
+duelDot.Parent = duelActionBtn
+Instance.new("UICorner", duelDot).CornerRadius = UDim.new(1, 0)
+
+local duelStatus = Instance.new("TextLabel")
+duelStatus.Size = UDim2.new(1, -28, 0, 14)
+duelStatus.Position = UDim2.new(0, 28, 1, -16)
+duelStatus.BackgroundTransparency = 1
+duelStatus.Text = "JUST WIN IT."
+duelStatus.Font = Enum.Font.Gotham
+duelStatus.TextSize = 10
+duelStatus.TextColor3 = NK.WHITE
+duelStatus.BackgroundTransparency = 1
+duelStatus.Parent = duelActionBtn
+
+local function setDuelVisual(on, statusText)
+    if on then
+        TweenService:Create(duelActionBtn, TweenInfo.new(0.18),
+            { BackgroundColor3 = NK.PURPLE_DARK }):Play()
+        TweenService:Create(duelDot, TweenInfo.new(0.18),
+            { BackgroundColor3 = NK.GREEN }):Play()
+        duelActionBtn.Text = "⚔  NOREAL DUEL  —  ON"
+    else
+        TweenService:Create(duelActionBtn, TweenInfo.new(0.18),
+            { BackgroundColor3 = NK.PURPLE }):Play()
+        TweenService:Create(duelDot, TweenInfo.new(0.18),
+            { BackgroundColor3 = NK.GREY_DARK }):Play()
+        duelActionBtn.Text = "⚔  NOREAL DUEL  —  OFF"
+    end
+    duelStatus.Text = statusText or "JUST WIN IT."
+end
+
+local _origStart = startDuel
+startDuel = function()
+    _origStart()
+    if DuelState.Connection then DuelState.Connection:Disconnect() end
+    local root = getHRP(); if not root then return end
+    DuelState.Connection = RunService.Stepped:Connect(function()
+        if not DuelState.Moving then return end
+        local hrpRef = getHRP(); if not hrpRef then stopDuel(); return end
+        local wp = DuelState.Waypoints[DuelState.CurrentWaypoint]
+        if not wp then stopDuel(); return end
+        local dist = (hrpRef.Position - wp.position).Magnitude
+        if dist < 6 then
+            if DuelState.CurrentWaypoint >= #DuelState.Waypoints then
+                setDuelVisual(false, "ROUTE DONE.")
+                stopDuel(); return
+            end
+            DuelState.CurrentWaypoint += 1
+            duelStatus.Text = "WP " .. DuelState.CurrentWaypoint .. " / " .. #DuelState.Waypoints
+        else
+            local dir = (wp.position - hrpRef.Position).Unit
+            hrpRef.Velocity = Vector3.new(dir.X * wp.speed, hrpRef.Velocity.Y, dir.Z * wp.speed)
+        end
+    end)
+end
+
+duelActionBtn.MouseButton1Click:Connect(function()
+    if DuelState.Moving then
+        stopDuel(); setDuelVisual(false, "STOPPED.")
+    else
+        startDuel(); setDuelVisual(true, "RUNNING...")
+    end
+end)
+
+-- =============================================
+-- NOREAL TOGGLE FACTORY
+-- =============================================
+local function CreateToggle(sectionName, text)
+    local parentFrame = frames[sectionName]
+
+    if text == "Radio Steal Nearest" and sectionName == "Settings" then
+        local container = Instance.new("Frame")
+        container.Size = UDim2.new(1, 0, 0, 46)
+        container.BackgroundColor3 = NK.PANEL
+        container.BorderSizePixel = 0; container.Parent = parentFrame
+        Instance.new("UICorner", container).CornerRadius = UDim.new(0, 10)
+        Instance.new("UIStroke", container).Color = NK.PURPLE
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0.58, 0, 1, 0)
+        label.Position = UDim2.new(0, 12, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Font = Enum.Font.GothamBold; label.TextSize = 13
+        label.TextColor3 = NK.WHITE
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Text = "Noreal Steal Radius"; label.Parent = container
+
+        local textbox = Instance.new("TextBox")
+        textbox.Size = UDim2.new(0, 78, 0, 28)
+        textbox.Position = UDim2.new(1, -88, 0.5, -14)
+        textbox.BackgroundColor3 = NK.CARD
+        textbox.TextColor3 = NK.WHITE; textbox.Font = Enum.Font.GothamBold
+        textbox.TextSize = 13; textbox.Text = tostring(grabRadius)
+        textbox.ClearTextOnFocus = false; textbox.BorderSizePixel = 0
+        textbox.Parent = container
+        Instance.new("UICorner", textbox).CornerRadius = UDim.new(0, 6)
+        Instance.new("UIStroke", textbox).Color = NK.PURPLE
+
+        textbox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                local num = tonumber(textbox.Text)
+                if num and num > 0 and num <= 1000 then
+                    grabRadius = num; STEAL_GRAB_RADIUS = num
+                    if stealSquarePart then
+                        stealSquarePart.Size = Vector3.new(0.05, grabRadius * 2, grabRadius * 2)
+                    end
+                else textbox.Text = tostring(grabRadius) end
+            end
+        end)
+        return
+    end
+
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(1, 0, 0, 46)
+    container.BackgroundColor3 = NK.PANEL
+    container.BorderSizePixel = 0; container.Parent = parentFrame
+    Instance.new("UICorner", container).CornerRadius = UDim.new(0, 10)
+    Instance.new("UIStroke", container).Color = NK.GREY_DARK
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.65, 0, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.GothamBold; label.TextSize = 13
+    label.TextColor3 = NK.WHITE
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Text = "Noreal " .. text; label.Parent = container
+
+    local pill = Instance.new("TextButton")
+    pill.Size = UDim2.new(0, 50, 0, 24)
+    pill.Position = UDim2.new(1, -60, 0.5, -12)
+    pill.BackgroundColor3 = NK.GREY_DARK
+    pill.Text = ""; pill.BorderSizePixel = 0
+    pill.Parent = container
+    Instance.new("UICorner", pill).CornerRadius = UDim.new(1, 0)
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 18, 0, 18)
+    knob.Position = UDim2.new(0, 3, 0.5, -9)
+    knob.BackgroundColor3 = NK.WHITE
+    knob.BorderSizePixel = 0; knob.Parent = pill
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    local enabled = false
+
+    pill.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        if enabled then
+            TweenService:Create(pill,  TweenInfo.new(0.2), { BackgroundColor3 = NK.PURPLE }):Play()
+            TweenService:Create(knob,  TweenInfo.new(0.2), { Position = UDim2.new(1, -21, 0.5, -9) }):Play()
+            TweenService:Create(container, TweenInfo.new(0.2),
+                { BackgroundColor3 = Color3.fromRGB(40, 18, 18) }):Play()
+            Instance.new("UIStroke", container).Color = NK.PURPLE
+        else
+            TweenService:Create(pill,  TweenInfo.new(0.2), { BackgroundColor3 = NK.GREY_DARK }):Play()
+            TweenService:Create(knob,  TweenInfo.new(0.2), { Position = UDim2.new(0, 3, 0.5, -9) }):Play()
+            TweenService:Create(container, TweenInfo.new(0.2),
+                { BackgroundColor3 = NK.PANEL }):Play()
+        end
+
+        if text == "Speed Customizer" then
+            local bg = lp.PlayerGui:FindFirstChild("NorealBoosterCustomizer")
+            if bg then bg.Enabled = enabled end
+        elseif text == "Slow Fall" then
+            slowFallEnabled = enabled
+        elseif text == "Optimizer" then
+            if enabled then enableOptimizer() else disableOptimizer() end
+        elseif text == "Spin Body" then
+            if enabled then createSpinButton() else removeSpinButton() end
+        elseif text == "Anti Ragdoll" then
+            toggleAntiRagdoll(enabled)
+        elseif text == "Anti FPS Devourer" then
+            if enabled then enableAntiFPSDevourer() else disableAntiFPSDevourer() end
+        elseif text == "Anti Sentry" then
+            if enabled then startAntiSentry() else stopAntiSentry() end
+        elseif text == "Infinite Jump" then
+            infiniteJumpEnabled = enabled
+        elseif text == "Anti Bee & Disco" then
+            if enabled then enableAntiBee() else disableAntiBee() end
+        elseif text == "Xray Base" then
+            toggleESPBases(enabled)
+        elseif text == "ESP Players" then
+            toggleESPPlayers(enabled)
+        elseif text == "No Walk Animation" then
+            local char = lp.Character; if not char then return end
+            local animate = char:FindFirstChild("Animate")
+            if enabled then
+                if animate then savedAnimate = animate; animate.Disabled = true end
+                local h = char:FindFirstChildOfClass("Humanoid")
+                if h then for _, t in ipairs(h:GetPlayingAnimationTracks()) do t:Stop() end end
+            else
+                if savedAnimate then savedAnimate.Disabled = false; savedAnimate = nil end
+            end
+        elseif text == "Auto Bat" then
+            autoBatActive = enabled
+            if enabled then
+                autoBatLoop = task.spawn(function()
+                    while autoBatActive do
+                        local char = lp.Character
+                        if char then
+                            local tool = char:FindFirstChild("Bat")
+                            if tool and tool:IsA("Tool") then
+                                pcall(function() tool:Activate() end)
+                            end
+                        end
+                        task.wait(0.4)
+                    end
+                end)
+            else autoBatActive = false end
+        elseif text == "Lock Target" then
+            if enabled then createLockGui() else destroyLockGui() end
+        elseif text == "Auto Medusa" then
+            AutoMedusaEnabled = not AutoMedusaEnabled; InitMedusa()
+        elseif text == "Melee Aimbot" then
+            meleeEnabled = enabled
+            if enabled then
+                if character then createMeleeAimbot(character) end
+            else disableMeleeAimbot() end
+        elseif text == "Auto Steal Nearest" then
+            autoStealEnabled = enabled
+            if enabled then
+                createOrUpdateSquare(grabRadius)
+                progressBarBg.Visible = true
+                local sqConn = RunService.RenderStepped:Connect(updateSquarePosition)
+                startSmartSteal()
+                task.spawn(function()
+                    while autoStealEnabled do
+                        local char = lp.Character
+                        local root = char and char:FindFirstChild("HumanoidRootPart")
+                        if root then
+                            local targets = scanStealTargets()
+                            local best, bestDist = nil, STEAL_GRAB_RADIUS
+                            for _, t in ipairs(targets) do
+                                local d = (root.Position - t.position).Magnitude
+                                if d < bestDist then bestDist = d; best = t end
+                            end
+                            if best then
+                                progressBarBg.Visible = true
+                                for i = 0, 1, 0.12 do
+                                    if not autoStealEnabled then break end
+                                    progressFill.Size = UDim2.new(i, 0, 1, 0)
+                                    percentLabel.Text = math.floor(i * 100) .. "%"
+                                    task.wait(0.03)
+                                end
+                                progressFill.Size = UDim2.new(0, 0, 1, 0)
+                                percentLabel.Text = "0%"
+                            else
+                                progressFill.Size = UDim2.new(0, 0, 1, 0)
+                                percentLabel.Text = "0%"
+                            end
+                        end
+                        task.wait(0.3)
+                    end
+                    progressBarBg.Visible = false
+                    progressFill.Size = UDim2.new(0, 0, 1, 0)
+                    percentLabel.Text = "0%"
+                    hideSquare()
+                    sqConn:Disconnect()
+                end)
+            else
+                stopSmartSteal()
+                progressBarBg.Visible = false
+                progressFill.Size = UDim2.new(0, 0, 1, 0)
+                percentLabel.Text = "0%"
+                hideSquare()
+            end
+        end
+    end)
+end
+
+--// NOREAL SLOW FALL
+local slowFallEnabled = false
+RunService.Heartbeat:Connect(function()
+    if not slowFallEnabled then return end
+    local char = lp.Character; if not char then return end
+    local h = char:FindFirstChildOfClass("Humanoid")
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not h or not root then return end
+    if h:GetState() == Enum.HumanoidStateType.Freefall then
+        local v = root.AssemblyLinearVelocity
+        if v.Y < -1 then root.AssemblyLinearVelocity = Vector3.new(v.X, v.Y * 0.5, v.Z) end
+    end
+end)
+
+--// NOREAL LOCK TARGET
+local LOCK_RADIUS = 70
+local LOCK_SPEED = 50
+local lockGui, lockHbConn, lockLv, lockAtt, lockGyro
+local lockEnabled = false
+
+local function getNearest()
+    local char = lp.Character; if not char then return nil end
+    local hrpRef = char:FindFirstChild("HumanoidRootPart"); if not hrpRef then return nil end
+    local nearest, nearestDist = nil, LOCK_RADIUS
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= lp then
+            local pc = plr.Character
+            local phrp = pc and pc:FindFirstChild("HumanoidRootPart")
+            if phrp then
+                local d = (phrp.Position - hrpRef.Position).Magnitude
+                if d <= nearestDist then nearest = plr; nearestDist = d end
+            end
+        end
+    end
+    return nearest
+end
+local function getBat()
+    for _, t in ipairs(lp.Backpack:GetChildren()) do
+        if t:IsA("Tool") and t.Name:lower():find("bat") then return t end
+    end
+    local char = lp.Character
+    if char then
+        for _, t in ipairs(char:GetChildren()) do
+            if t:IsA("Tool") and t.Name:lower():find("bat") then return t end
+        end
+    end
+    return nil
+end
+local function startLock()
+    local char = lp.Character; if not char then return end
+    local hrpRef = char:FindFirstChild("HumanoidRootPart"); if not hrpRef then return end
+    lockAtt = Instance.new("Attachment", hrpRef)
+    lockLv = Instance.new("LinearVelocity", hrpRef)
+    lockLv.Attachment0 = lockAtt; lockLv.MaxForce = 50000
+    lockLv.RelativeTo = Enum.ActuatorRelativeTo.World; lockLv.Enabled = false
+    lockGyro = Instance.new("AlignOrientation", hrpRef)
+    lockGyro.Attachment0 = lockAtt; lockGyro.MaxTorque = 50000
+    lockGyro.Responsiveness = 120; lockGyro.Enabled = false
+    lockHbConn = RunService.Heartbeat:Connect(function()
+        local tp = getNearest()
+        if not tp then lockLv.Enabled = false; lockGyro.Enabled = false; return end
+        local tChar = tp.Character
+        local tHrp = tChar and tChar:FindFirstChild("HumanoidRootPart")
+        if not tHrp then lockLv.Enabled = false; lockGyro.Enabled = false; return end
+        lockLv.Enabled = true; lockGyro.Enabled = true
+        local frontPos = tHrp.Position + tHrp.CFrame.LookVector * 2.2
+        local dir = frontPos - hrpRef.Position
+        lockLv.VectorVelocity = dir.Magnitude > 0.5 and dir.Unit * LOCK_SPEED or Vector3.zero
+        lockGyro.CFrame = CFrame.lookAt(hrpRef.Position, frontPos)
+        local bat = getBat()
+        if bat then
+            if bat.Parent ~= char then char.Humanoid:EquipTool(bat) end
+            bat:Activate()
+        end
+    end)
+end
+local function stopLock()
+    if lockHbConn then lockHbConn:Disconnect(); lockHbConn = nil end
+    if lockLv then lockLv:Destroy(); lockLv = nil end
+    if lockGyro then lockGyro:Destroy(); lockGyro = nil end
+    if lockAtt then lockAtt:Destroy(); lockAtt = nil end
+end
+function createLockGui()
+    if lockGui then return end
+    lockGui = Instance.new("ScreenGui"); lockGui.Name = "NorealBatTarget"
+    lockGui.Parent = lp.PlayerGui
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 150, 0, 50)
+    btn.Position = UDim2.new(0.5, -75, 0.75, 0)
+    btn.Text = "✓  NOREAL LOCK"
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16; btn.TextColor3 = NK.WHITE
+    btn.BackgroundColor3 = NK.PURPLE
+    btn.BorderSizePixel = 0; btn.Parent = lockGui
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 14)
+    btn.Active = true; btn.Draggable = true
+    btn.MouseButton1Click:Connect(function()
+        lockEnabled = not lockEnabled
+        if lockEnabled then
+            btn.Text = "✓  NOREAL LOCKED"
+            btn.BackgroundColor3 = NK.PURPLE_DARK
+            startLock()
+        else
+            btn.Text = "✓  NOREAL LOCK"
+            btn.BackgroundColor3 = NK.PURPLE
+            stopLock()
+        end
+    end)
+end
+function destroyLockGui()
+    lockEnabled = false; stopLock()
+    if lockGui then lockGui:Destroy(); lockGui = nil end
+end
+
+--// NOREAL MEDUSA
+local MEDUSA_RADIUS = 10
+local SPAM_DELAY = 0.15
+local medusaPart, lastUse, AutoMedusaEnabled, MedusaInitialized = nil, 0, false, false
+
+local function InitMedusa()
+    if MedusaInitialized then return end
+    MedusaInitialized = true
+    medusaPart = Instance.new("Part"); medusaPart.Name = "NorealMedusaRadius"
+    medusaPart.Anchored = true; medusaPart.CanCollide = false
+    medusaPart.Transparency = 1; medusaPart.Material = Enum.Material.Neon
+    medusaPart.Color = NK.PURPLE
+    medusaPart.Shape = Enum.PartType.Cylinder
+    medusaPart.Size = Vector3.new(0.05, MEDUSA_RADIUS * 2, MEDUSA_RADIUS * 2)
+    medusaPart.Parent = workspace
+    RunService.RenderStepped:Connect(function()
+        if not AutoMedusaEnabled then medusaPart.Transparency = 1; return end
+        medusaPart.Transparency = 0.75
+        local char = lp.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart"); if not root then return end
+        medusaPart.CFrame = CFrame.new(root.Position + Vector3.new(0, -2.5, 0))
+            * CFrame.Angles(0, 0, math.rad(90))
+    end)
+    RunService.Heartbeat:Connect(function()
+        if not AutoMedusaEnabled then return end
+        local char = lp.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart"); if not root then return end
+        local tool
+        for _, t in ipairs(char:GetChildren()) do
+            if t:IsA("Tool") and t.Name == "Medusa's Head" then tool = t; break end
+        end
+        if not tool or tick() - lastUse < SPAM_DELAY then return end
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= lp then
+                local pChar = p.Character
+                local pRoot = pChar and pChar:FindFirstChild("HumanoidRootPart")
+                if pRoot and (pRoot.Position - root.Position).Magnitude <= MEDUSA_RADIUS then
+                    tool:Activate(); lastUse = tick(); break
+                end
+            end
+        end
+    end)
+end
+
+--// NOREAL SPIN
+local spinForce
+local function startSpinBody()
+    local char = lp.Character; if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart"); if not root or spinForce then return end
+    spinForce = Instance.new("BodyAngularVelocity"); spinForce.Name = "NorealSpinForce"
+    spinForce.AngularVelocity = Vector3.new(0, 25, 0)
+    spinForce.MaxTorque = Vector3.new(0, math.huge, 0)
+    spinForce.P = 1250; spinForce.Parent = root
+end
+local function stopSpinBody()
+    if spinForce then spinForce:Destroy(); spinForce = nil end
+end
+local spinGui, spinActive = nil, false
+local function createSpinButton()
+    if spinGui then return end
+    spinGui = Instance.new("ScreenGui"); spinGui.Name = "NorealSpinGui"
+    spinGui.Parent = game:GetService("CoreGui")
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 150, 0, 50)
+    btn.Position = UDim2.new(0.5, -75, 0.75, 0)
+    btn.Text = "✓  NOREAL SPIN"
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16; btn.TextColor3 = NK.WHITE
+    btn.BackgroundColor3 = NK.PURPLE
+    btn.BorderSizePixel = 0; btn.Parent = spinGui
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 14)
+    btn.Active = true; btn.Draggable = true
+    btn.MouseButton1Click:Connect(function()
+        spinActive = not spinActive
+        if spinActive then
+            btn.Text = "✓  NOREAL SPINNING"
+            btn.BackgroundColor3 = NK.PURPLE_DARK
+            startSpinBody()
+        else
+            btn.Text = "✓  NOREAL SPIN"
+            btn.BackgroundColor3 = NK.PURPLE
+            stopSpinBody()
+        end
+    end)
+end
+local function removeSpinButton()
+    stopSpinBody(); spinActive = false
+    if spinGui then spinGui:Destroy(); spinGui = nil end
+end
+
+-- =============================================
+-- POPULATE SECTIONS
+-- =============================================
+local combatFuncs = {
+    "Melee Aimbot", "Auto Steal Nearest",
+    "Lock Target", "Auto Medusa", "Auto Bat", "Anti Sentry"
+}
+for _, f in ipairs(combatFuncs) do CreateToggle("Combat", f) end
+
+local playerFuncs = {
+    "Speed Customizer", "No Walk Animation",
+    "Anti Ragdoll", "Spin Body", "Slow Fall", "Infinite Jump"
+}
+for _, f in ipairs(playerFuncs) do CreateToggle("Player", f) end
+
+local visualFuncs = {
+    "ESP Players", "Anti Bee & Disco",
+    "Xray Base", "Optimizer", "Anti FPS Devourer"
+}
+for _, f in ipairs(visualFuncs) do CreateToggle("Visual", f) end
+
+CreateToggle("Settings", "Radio Steal Nearest")
+
+local function makeRangeSetting(sectionName, labelText, getValue, setValue, minV, maxV)
+    local pf = frames[sectionName]
+    local c = Instance.new("Frame"); c.Size = UDim2.new(1, 0, 0, 46)
+    c.BackgroundColor3 = NK.PANEL; c.BorderSizePixel = 0; c.Parent = pf
+    Instance.new("UICorner", c).CornerRadius = UDim.new(0, 10)
+    Instance.new("UIStroke", c).Color = NK.GREY_DARK
+    local l = Instance.new("TextLabel"); l.Size = UDim2.new(0.6, 0, 1, 0)
+    l.Position = UDim2.new(0, 12, 0, 0); l.BackgroundTransparency = 1
+    l.Font = Enum.Font.GothamBold; l.TextSize = 13
+    l.TextColor3 = NK.WHITE; l.TextXAlignment = Enum.TextXAlignment.Left
+    l.Text = "Noreal " .. labelText; l.Parent = c
+    local tb = Instance.new("TextBox"); tb.Size = UDim2.new(0, 78, 0, 28)
+    tb.Position = UDim2.new(1, -88, 0.5, -14)
+    tb.BackgroundColor3 = NK.CARD; tb.TextColor3 = NK.WHITE
+    tb.Font = Enum.Font.GothamBold; tb.TextSize = 13
+    tb.Text = tostring(getValue()); tb.ClearTextOnFocus = false
+    tb.BorderSizePixel = 0; tb.Parent = c
+    Instance.new("UICorner", tb).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", tb).Color = NK.PURPLE
+    tb.FocusLost:Connect(function(e)
+        if e then
+            local n = tonumber(tb.Text)
+            if n and n >= minV and n <= maxV then setValue(n)
+            else tb.Text = tostring(getValue()) end
+        end
+    end)
+end
+
+makeRangeSetting("Settings", "Range Lock Target",
+    function() return LOCK_RADIUS end,
+    function(n) LOCK_RADIUS = n end, 6, 500)
+
+makeRangeSetting("Settings", "Radio Auto Medusa",
+    function() return MEDUSA_RADIUS end,
+    function(n)
+        MEDUSA_RADIUS = n
+        if medusaPart then
+            medusaPart.Size = Vector3.new(0.05, MEDUSA_RADIUS * 2, MEDUSA_RADIUS * 2)
+        end
+    end, 2, 200)
+
+makeRangeSetting("Settings", "Range Melee Aimbot",
+    function() return MELEE_RANGE end,
+    function(n) MELEE_RANGE = n end, 2, 50)
+
+local function showFirst()
+    frames["Combat"].Visible = true
+    sectionButtons[1].BackgroundColor3 = NK.PURPLE
+    sectionButtons[1].TextColor3 = NK.WHITE
+end
+showFirst()
+
+local opened = false
+toggleBtn.MouseButton1Click:Connect(function()
+    opened = not opened
+    if opened then
+        TweenService:Create(hub, TweenInfo.new(0.28, Enum.EasingStyle.Quint),
+            { Position = UDim2.new(0, 16, 0.5, -HUB_HEIGHT / 2) }):Play()
+    else
+        TweenService:Create(hub, TweenInfo.new(0.28, Enum.EasingStyle.Quint),
+            { Position = UDim2.new(0, -(HUB_WIDTH + 20), 0.5, -HUB_HEIGHT / 2) }):Play()
+    end
+end)
